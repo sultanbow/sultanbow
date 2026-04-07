@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Shooting Analysis</title>
 <style>
-html, body { margin:0; padding:0; width:100%; height:100%; display:flex; justify-content:center; align-items:center; background:#ccc; font-family:Arial;}
+html, body { margin:0; padding:0; width:100%; height:100%; display:flex; justify-content:center; align-items:center; background:#ccc; font-family:Arial; }
 canvas { background:#f0f0f0; display:block; touch-action:none; }
 </style>
 </head>
@@ -22,7 +22,7 @@ let arrowColors = {};
 let currentRound = 1, currentShot = 0;
 let numRounds = 0, maxArrows = 0;
 
-let state = "input"; // input, game, number, history
+let state = "input"; // input, game, number, history, all
 let inputRounds = "", inputArrows = "";
 let activeInput = "rounds";
 let selectedNumber = "";
@@ -38,7 +38,7 @@ function resize(){
   HEIGHT = canvas.height;
   center = {x: WIDTH/2, y: HEIGHT/3};
   TARGET_RADIUS = Math.min(WIDTH, HEIGHT)/5;
-  RED_RADIUS = TARGET_RADIUS * 0.315; // уменьшен на 10%
+  RED_RADIUS = TARGET_RADIUS * 0.315;
 }
 window.addEventListener("resize", resize);
 resize();
@@ -115,7 +115,6 @@ function drawInput(){
   ctx.fillText(inputRounds, WIDTH*0.45, HEIGHT*0.22+25);
   ctx.fillText(inputArrows, WIDTH*0.45, HEIGHT*0.32+25);
 
-  // клавиатура по центру между полями и кнопками
   let kbStartY = (HEIGHT*0.4 + HEIGHT-110)/2 - 60;
   drawKeypad(kbStartY, 1.5);
 
@@ -199,6 +198,15 @@ canvas.addEventListener("mousedown", e=>{
     }
   }
 
+  if(state==="game"){
+    // касание мишени
+    let dx = x-center.x, dy = y-center.y;
+    if(Math.sqrt(dx*dx+dy*dy)<=TARGET_RADIUS && currentShot<maxArrows){
+      clickPos={x,y};
+      selectedNumber="";
+      state="number";
+    }
+  }
 });
 
 canvas.addEventListener("mouseup", ()=>{pressedButton=null;});
