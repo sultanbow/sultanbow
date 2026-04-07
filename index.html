@@ -103,8 +103,8 @@ ctx.fill();
 }
 
 // ---------- KEYPAD ----------
-function drawKeypad(startY){
-let size=Math.min(70,WIDTH/9);
+function drawKeypad(startY,scaleFactor=1){
+let size=Math.min(80,WIDTH/8)*scaleFactor;
 let startX=WIDTH/2-(5*(size+10))/2;
 let colors=["#e74c3c","#f39c12","#2ecc71","#3498db","#9b59b6","#1abc9c","#e67e22","#8e44ad","#34495e","#f1c40f"];
 
@@ -133,21 +133,22 @@ ctx.fillText(s.num,s.x,s.y+4);
 function drawInput(){
 ctx.fillStyle="black";
 ctx.font="32px Arial";
-ctx.fillText("Rounds:",WIDTH*0.1,HEIGHT*0.3);
-ctx.fillText("Arrows:",WIDTH*0.1,HEIGHT*0.4);
+ctx.fillText("Rounds:",WIDTH*0.1,HEIGHT*0.25);
+ctx.fillText("Arrows:",WIDTH*0.1,HEIGHT*0.35);
 
 ctx.strokeStyle=activeInput==="rounds"?"green":"black";
-ctx.strokeRect(WIDTH*0.4,HEIGHT*0.28,WIDTH*0.3,50);
+ctx.strokeRect(WIDTH*0.4,HEIGHT*0.22,WIDTH*0.3,50);
 ctx.strokeStyle=activeInput==="arrows"?"green":"black";
-ctx.strokeRect(WIDTH*0.4,HEIGHT*0.38,WIDTH*0.3,50);
+ctx.strokeRect(WIDTH*0.4,HEIGHT*0.32,WIDTH*0.3,50);
 
-ctx.fillText(inputRounds,WIDTH*0.45,HEIGHT*0.32);
-ctx.fillText(inputArrows,WIDTH*0.45,HEIGHT*0.42);
+ctx.fillText(inputRounds,WIDTH*0.45,HEIGHT*0.26);
+ctx.fillText(inputArrows,WIDTH*0.45,HEIGHT*0.36);
 
-drawKeypad(HEIGHT-250);
+// 📍 КЛАВИАТУРА ПО ЦЕНТРУ
+drawKeypad(HEIGHT*0.45,1.2);
 
-drawButton(WIDTH*0.15,HEIGHT-120,120,60,"DEL","#e74c3c","del");
-drawButton(WIDTH*0.55,HEIGHT-120,150,60,"START","#2ecc71","start");
+drawButton(WIDTH*0.2,HEIGHT-100,140,60,"DEL","#e74c3c","del");
+drawButton(WIDTH*0.6,HEIGHT-100,160,60,"START","#2ecc71","start");
 }
 
 // ---------- GAME ----------
@@ -227,17 +228,17 @@ let y=e.clientY-r.top;
 function press(id){pressedButton=id;pressTime[id]=Date.now();}
 
 if(state==="input"){
-if(y>HEIGHT*0.28&&y<HEIGHT*0.34)activeInput="rounds";
-if(y>HEIGHT*0.38&&y<HEIGHT*0.44)activeInput="arrows";
+if(y>HEIGHT*0.22&&y<HEIGHT*0.28)activeInput="rounds";
+if(y>HEIGHT*0.32&&y<HEIGHT*0.38)activeInput="arrows";
 
-if(y>HEIGHT-120){
-if(x<200){press("del"); if(activeInput==="rounds")inputRounds=inputRounds.slice(0,-1); else inputArrows=inputArrows.slice(0,-1);}
+if(y>HEIGHT-100){
+if(x<WIDTH/2){press("del"); if(activeInput==="rounds")inputRounds=inputRounds.slice(0,-1); else inputArrows=inputArrows.slice(0,-1);}
 else{press("start"); numRounds=parseInt(inputRounds); maxArrows=parseInt(inputArrows); if(numRounds&&maxArrows)state="game";}
 }
 
-let size=Math.min(70,WIDTH/9);
+let size=Math.min(80,WIDTH/8)*1.2;
 let startX=WIDTH/2-(5*(size+10))/2;
-let startY=HEIGHT-250;
+let startY=HEIGHT*0.45;
 
 if(y>startY&&y<startY+size*2){
 let col=Math.floor((x-startX)/(size+10));
@@ -273,9 +274,6 @@ if(y>HEIGHT-60){press("delNum"); selectedNumber=selectedNumber.slice(0,-1);}
 else if(y>HEIGHT-120){
 press("ready");
 if(!selectedNumber)return;
-if(shots.some(s=>s.round===currentRound&&s.num===selectedNumber))return;
-
-arrowColors[selectedNumber]=arrowColors[selectedNumber]||`rgb(${Math.random()*255},${Math.random()*255},${Math.random()*255})`;
 
 shots.push({
 x:clickPos.x,
@@ -332,7 +330,7 @@ HEIGHT=canvas.height;
 center={x:WIDTH/2,y:HEIGHT/3};
 
 TARGET_RADIUS=Math.min(WIDTH,HEIGHT)/5*1.5;
-RED_RADIUS=TARGET_RADIUS*0.35*1.5*0.9; // уменьшен на 10%
+RED_RADIUS=TARGET_RADIUS*0.35*1.5*0.9;
 
 if(state==="input")drawInput();
 else if(state==="game")drawGame();
