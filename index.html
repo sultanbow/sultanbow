@@ -26,14 +26,11 @@ canvas{background:#f0f0f0;}
 const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
 
-function resize(){
-canvas.width=window.innerWidth;
-canvas.height=window.innerHeight;
-}
+function resize(){canvas.width=window.innerWidth; canvas.height=window.innerHeight;}
 window.addEventListener("resize",resize);
 resize();
 
-let WIDTH,HEIGHT,center,TARGET_RADIUS,RED_RADIUS;
+let WIDTH, HEIGHT, center, TARGET_RADIUS, RED_RADIUS;
 
 let shots=[];
 let arrowColors={};
@@ -51,7 +48,7 @@ let histRound=1;
 
 // ---------- SCORE ----------
 function getScore(x,y){
-let dx=x-center.x,dy=y-center.y;
+let dx=x-center.x, dy=y-center.y;
 let d=Math.sqrt(dx*dx+dy*dy);
 if(d<=RED_RADIUS)return 2;
 if(d<=TARGET_RADIUS)return 1;
@@ -97,7 +94,8 @@ ctx.fill();
 ctx.stroke();
 
 ctx.beginPath();
-ctx.arc(center.x,center.y,RED_RADIUS,0,Math.PI*2);
+// 🔴 красный круг уменьшен на 10%
+ctx.arc(center.x,center.y,RED_RADIUS*0.9,0,Math.PI*2);
 ctx.fillStyle="red";
 ctx.fill();
 }
@@ -119,13 +117,14 @@ drawButton(x,y,size,size,i,colors[i],"key"+i);
 function drawArrows(arr){
 arr.forEach(s=>{
 ctx.fillStyle=arrowColors[s.num];
+// 🎯 делаем стрелы меньше, чтобы не мешали
 ctx.beginPath();
-ctx.arc(s.x,s.y,Math.max(12,WIDTH/35),0,Math.PI*2);
+ctx.arc(s.x,s.y,Math.max(6,WIDTH/50),0,Math.PI*2);
 ctx.fill();
 ctx.fillStyle="black";
-ctx.font="16px Arial";
+ctx.font="14px Arial";
 ctx.textAlign="center";
-ctx.fillText(s.num,s.x,s.y+4);
+ctx.fillText(s.num,s.x,s.y+3);
 });
 }
 
@@ -153,7 +152,7 @@ ctx.fillText(inputArrows,WIDTH*0.45,HEIGHT*0.32+25);
 // 📍 клавиатура по центру
 drawKeypad(HEIGHT*0.45,1.2);
 
-// 🔘 увеличенные кнопки
+// 🔘 увеличенные кнопки DEL и START
 drawButton(WIDTH*0.15,HEIGHT-110,180,70,"DEL","#e74c3c","del");
 drawButton(WIDTH*0.55,HEIGHT-110,200,70,"START","#2ecc71","start");
 }
@@ -168,12 +167,14 @@ let ts=shots.reduce((a,s)=>a+getScore(s.x,s.y),0);
 
 ctx.fillStyle="black";
 ctx.font="20px Arial";
-ctx.fillText(`Round ${currentRound}/${numRounds}`,10,30);
-ctx.fillText(`Arrow ${currentShot}/${maxArrows}`,10,60);
-ctx.fillText(`Round Score ${rs}`,10,90);
-ctx.fillText(`Total ${ts}`,10,120);
+// 📝 сдвигаем текст правее
+ctx.fillText(`Round ${currentRound}/${numRounds}`,WIDTH-200,30);
+ctx.fillText(`Arrow ${currentShot}/${maxArrows}`,WIDTH-200,60);
+ctx.fillText(`Round Score ${rs}`,WIDTH-200,90);
+ctx.fillText(`Total ${ts}`,WIDTH-200,120);
 
-let w=WIDTH/3-10;
+// 🔘 кнопки Hist, Reset, Restart увеличены
+let w=WIDTH/3-5;
 drawButton(5,HEIGHT-60,w,60,"Hist","#3498db","hist");
 drawButton(5+w+5,HEIGHT-60,w,60,"Reset","#f39c12","reset");
 drawButton(5+2*(w+5),HEIGHT-60,w,60,"Restart","#e74c3c","restart");
@@ -269,7 +270,7 @@ else inputArrows+=n;
 
 else if(state==="game"){
 if(y>HEIGHT-60){
-let w=WIDTH/3-10;
+let w=WIDTH/3-5;
 if(x<5+w){press("hist"); state="history"; histRound=currentRound;}
 else if(x<5+2*(w+5)){press("reset"); shots=shots.filter(s=>s.round!==currentRound); currentShot=0;}
 else{press("restart"); shots=[]; arrowColors={}; currentRound=1; currentShot=0;}
@@ -345,7 +346,7 @@ HEIGHT=canvas.height;
 center={x:WIDTH/2,y:HEIGHT/3};
 
 TARGET_RADIUS=Math.min(WIDTH,HEIGHT)/5*1.5;
-RED_RADIUS=TARGET_RADIUS*0.35*1.5*0.9;
+RED_RADIUS=TARGET_RADIUS*0.35; // уменьшили на 10%
 
 if(state==="input")drawInput();
 else if(state==="game")drawGame();
