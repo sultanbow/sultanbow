@@ -94,7 +94,6 @@ ctx.fill();
 ctx.stroke();
 
 ctx.beginPath();
-// красный круг уменьшен на 10%
 ctx.arc(center.x,center.y,RED_RADIUS*0.9,0,Math.PI*2);
 ctx.fillStyle="red";
 ctx.fill();
@@ -131,8 +130,11 @@ ctx.fillText(s.num,s.x,s.y+3);
 function drawInput(){
 ctx.fillStyle="black";
 ctx.font="32px Arial";
-ctx.fillText("Rounds:",WIDTH*0.1,HEIGHT*0.25);
-ctx.fillText("Arrows:",WIDTH*0.1,HEIGHT*0.35);
+
+// подписи немного ниже и поравнее с полями
+ctx.textAlign="right";
+ctx.fillText("Rounds:",WIDTH*0.38,HEIGHT*0.28);
+ctx.fillText("Arrows:",WIDTH*0.38,HEIGHT*0.38);
 
 ctx.strokeStyle=activeInput==="rounds"?"green":"black";
 ctx.strokeRect(WIDTH*0.4,HEIGHT*0.22,WIDTH*0.3,50);
@@ -140,16 +142,13 @@ ctx.strokeRect(WIDTH*0.4,HEIGHT*0.22,WIDTH*0.3,50);
 ctx.strokeStyle=activeInput==="arrows"?"green":"black";
 ctx.strokeRect(WIDTH*0.4,HEIGHT*0.32,WIDTH*0.3,50);
 
-// центрированный текст
 ctx.textAlign="left";
 ctx.textBaseline="middle";
 ctx.fillText(inputRounds,WIDTH*0.45,HEIGHT*0.22+25);
 ctx.fillText(inputArrows,WIDTH*0.45,HEIGHT*0.32+25);
 
-// клавиатура по центру
 drawKeypad(HEIGHT*0.45,1.2);
 
-// увеличенные кнопки DEL и START
 drawButton(WIDTH*0.15,HEIGHT-110,180,70,"DEL","#e74c3c","del");
 drawButton(WIDTH*0.55,HEIGHT-110,200,70,"START","#2ecc71","start");
 }
@@ -169,7 +168,6 @@ ctx.fillText(`Arrow ${currentShot}/${maxArrows}`,WIDTH-200,60);
 ctx.fillText(`Round Score ${rs}`,WIDTH-200,90);
 ctx.fillText(`Total ${ts}`,WIDTH-200,120);
 
-// кнопки Hist, Reset, Restart
 let w=WIDTH/3-5;
 drawButton(5,HEIGHT-60,w,60,"Hist","#3498db","hist");
 drawButton(5+w+5,HEIGHT-60,w,60,"Reset","#f39c12","reset");
@@ -185,14 +183,12 @@ function drawNumber(){
 drawTarget();
 drawArrows(shots.filter(s=>s.round===currentRound));
 
-// если номер выбран
 if(selectedNumber){
 ctx.fillStyle="black";
 ctx.font="22px Arial";
 ctx.fillText(selectedNumber,clickPos.x,clickPos.y-20);
 }
 
-// клавиатура теперь **выше**, между мишенью и нижними кнопками, увеличенная
 drawKeypad(HEIGHT*0.55,1.5);
 
 drawButton(WIDTH/2-120,HEIGHT-150,240,60,"READY","#2ecc71","ready");
@@ -205,7 +201,13 @@ drawTarget();
 drawArrows(shots.filter(s=>s.round===histRound));
 
 let rs=shots.filter(s=>s.round===histRound).reduce((a,s)=>a+getScore(s.x,s.y),0);
+let ts=shots.reduce((a,s)=>a+getScore(s.x,s.y),0);
+
+// смещаем Total вправо, чтобы не перекрывать экран
+ctx.fillStyle="black";
+ctx.font="20px Arial";
 ctx.fillText(`Round ${histRound} Score ${rs}`,50,40);
+ctx.fillText(`Total ${ts}`,WIDTH*0.7,40);
 
 let w=WIDTH/4-10;
 drawButton(5,HEIGHT-60,w,60,"Game","#2ecc71","game");
@@ -220,7 +222,7 @@ drawTarget();
 drawArrows(shots);
 
 let ts=shots.reduce((a,s)=>a+getScore(s.x,s.y),0);
-ctx.fillText(`Total ${ts}`,10,30);
+ctx.fillText(`Total ${ts}`,WIDTH*0.7,30);
 
 drawButton(10,HEIGHT-60,100,60,"Game","#2ecc71","game");
 drawButton(120,HEIGHT-60,120,60,"Back","#3498db","back");
@@ -289,20 +291,11 @@ if(y>HEIGHT-80){press("delNum"); selectedNumber=selectedNumber.slice(0,-1);}
 else if(y>HEIGHT-150){
 press("ready");
 if(!selectedNumber)return;
-
-// 🚫 запрещаем выбрать тот же номер стрелы в текущем раунде
 if(shots.some(s=>s.round===currentRound&&s.num===selectedNumber))return;
-
-// добавляем стрелу
 arrowColors[selectedNumber]=arrowColors[selectedNumber]||`rgb(${Math.random()*255},${Math.random()*255},${Math.random()*255})`;
 shots.push({x:clickPos.x,y:clickPos.y,num:selectedNumber,round:currentRound});
 currentShot++;
-
-// ✅ завершение игры после последней стрелы
-if(currentShot>=maxArrows){
-if(currentRound>=numRounds)state="history";
-else state="game";
-}else state="game";
+if(currentShot>=maxArrows){if(currentRound>=numRounds)state="history";else state="game";}else state="game";
 selectedNumber="";
 }
 
