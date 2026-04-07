@@ -131,10 +131,10 @@ function drawInput(){
 ctx.fillStyle="black";
 ctx.font="32px Arial";
 
-// подписи немного ниже и поравнее с полями
+// слова поднимаем, чтобы быть на уровне центров полей ввода
 ctx.textAlign="right";
-ctx.fillText("Rounds:",WIDTH*0.38,HEIGHT*0.28);
-ctx.fillText("Arrows:",WIDTH*0.38,HEIGHT*0.38);
+ctx.fillText("Rounds:",WIDTH*0.38,HEIGHT*0.245);
+ctx.fillText("Arrows:",WIDTH*0.38,HEIGHT*0.345);
 
 ctx.strokeStyle=activeInput==="rounds"?"green":"black";
 ctx.strokeRect(WIDTH*0.4,HEIGHT*0.22,WIDTH*0.3,50);
@@ -149,8 +149,8 @@ ctx.fillText(inputArrows,WIDTH*0.45,HEIGHT*0.32+25);
 
 drawKeypad(HEIGHT*0.45,1.2);
 
-drawButton(WIDTH*0.15,HEIGHT-110,180,70,"DEL","#e74c3c","del");
-drawButton(WIDTH*0.55,HEIGHT-110,200,70,"START","#2ecc71","start");
+drawButton(WIDTH*0.15,HEIGHT-110,200,70,"DEL","#e74c3c","del");
+drawButton(WIDTH*0.55,HEIGHT-110,220,70,"START","#2ecc71","start");
 }
 
 // ---------- GAME ----------
@@ -203,7 +203,6 @@ drawArrows(shots.filter(s=>s.round===histRound));
 let rs=shots.filter(s=>s.round===histRound).reduce((a,s)=>a+getScore(s.x,s.y),0);
 let ts=shots.reduce((a,s)=>a+getScore(s.x,s.y),0);
 
-// смещаем Total вправо, чтобы не перекрывать экран
 ctx.fillStyle="black";
 ctx.font="20px Arial";
 ctx.fillText(`Round ${histRound} Score ${rs}`,50,40);
