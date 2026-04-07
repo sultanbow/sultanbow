@@ -4,220 +4,361 @@
 <meta charset="UTF-8">
 <title>Shooting Analysis</title>
 <style>
-html, body { margin:0; padding:0; width:100%; height:100%; display:flex; justify-content:center; align-items:center; background:#ccc; font-family:Arial; }
-canvas { background:#f0f0f0; display:block; touch-action:none; }
+html,body{
+margin:0;
+padding:0;
+width:100%;
+height:100%;
+background:#ccc;
+display:flex;
+justify-content:center;
+align-items:center;
+overflow:hidden;
+font-family:Arial;
+}
+canvas{background:#f0f0f0;}
 </style>
 </head>
 <body>
 <canvas id="game"></canvas>
+
 <script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
 
-let WIDTH, HEIGHT, center;
-let TARGET_RADIUS, RED_RADIUS;
-
-let shots = [];
-let arrowColors = {};
-let currentRound = 1, currentShot = 0;
-let numRounds = 0, maxArrows = 0;
-
-let state = "input"; // input, game, number, history, all
-let inputRounds = "", inputArrows = "";
-let activeInput = "rounds";
-let selectedNumber = "";
-let clickPos = {};
-let pressedButton = null;
-let histRound = 1;
-
-// ---------- RESIZE ----------
-function resize(){
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  WIDTH = canvas.width;
-  HEIGHT = canvas.height;
-  center = {x: WIDTH/2, y: HEIGHT/3};
-  TARGET_RADIUS = Math.min(WIDTH, HEIGHT)/5;
-  RED_RADIUS = TARGET_RADIUS * 0.315;
-}
-window.addEventListener("resize", resize);
+function resize(){canvas.width=window.innerWidth; canvas.height=window.innerHeight;}
+window.addEventListener("resize",resize);
 resize();
+
+let WIDTH, HEIGHT, center, TARGET_RADIUS, RED_RADIUS;
+
+let shots=[];
+let arrowColors={};
+let currentRound=1,currentShot=0;
+let numRounds=0,maxArrows=0;
+
+let state="input";
+let inputRounds="",inputArrows="";
+let activeInput="rounds";
+let selectedNumber="";
+let clickPos={};
+let pressedButton=null;
+let pressTime={};
+let histRound=1;
 
 // ---------- SCORE ----------
 function getScore(x,y){
-  let dx = x - center.x, dy = y - center.y;
-  let dist = Math.sqrt(dx*dx + dy*dy);
-  if(dist <= RED_RADIUS) return 2;
-  if(dist <= TARGET_RADIUS) return 1;
-  return 0;
+let dx=x-center.x, dy=y-center.y;
+let d=Math.sqrt(dx*dx+dy*dy);
+if(d<=RED_RADIUS)return 2;
+if(d<=TARGET_RADIUS)return 1;
+return 0;
 }
 
 // ---------- BUTTON ----------
-function drawButton(x,y,w,h,text,color,id=null){
-  ctx.fillStyle = pressedButton===id ? "#444" : color;
-  ctx.beginPath();
-  ctx.roundRect(x,y,w,h,10);
-  ctx.fill();
-  ctx.fillStyle="white";
-  ctx.font = Math.floor(h/2) + "px Arial";
-  ctx.textAlign="center"; ctx.textBaseline="middle";
-  ctx.fillText(text, x+w/2, y+h/2);
+function drawButton(x,y,w,h,text,color,id){
+let scale=1;
+if(pressTime[id]){
+let dt=Date.now()-pressTime[id];
+if(dt<120)scale=0.9;
+else if(dt<200)scale=1.05;
+else delete pressTime[id];
+}
+
+let cx=x+w/2,cy=y+h/2;
+
+ctx.save();
+ctx.translate(cx,cy);
+ctx.scale(scale,scale);
+
+ctx.fillStyle=pressedButton===id?"#444":color;
+ctx.beginPath();
+ctx.roundRect(-w/2,-h/2,w,h,15);
+ctx.fill();
+
+ctx.fillStyle="white";
+ctx.font=`${Math.floor(h/2)}px Arial`;
+ctx.textAlign="center";
+ctx.textBaseline="middle";
+ctx.fillText(text,0,0);
+
+ctx.restore();
 }
 
 // ---------- TARGET ----------
 function drawTarget(){
-  ctx.beginPath();
-  ctx.arc(center.x, center.y, TARGET_RADIUS,0,Math.PI*2);
-  ctx.fillStyle="white"; ctx.fill(); ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(center.x, center.y, RED_RADIUS,0,Math.PI*2);
-  ctx.fillStyle="red"; ctx.fill();
+ctx.beginPath();
+ctx.arc(center.x,center.y,TARGET_RADIUS,0,Math.PI*2);
+ctx.fillStyle="white";
+ctx.fill();
+ctx.stroke();
+
+ctx.beginPath();
+// красный круг уменьшен на 10%
+ctx.arc(center.x,center.y,RED_RADIUS*0.9,0,Math.PI*2);
+ctx.fillStyle="red";
+ctx.fill();
 }
 
 // ---------- KEYPAD ----------
-function drawKeypad(startY, scale=1.5){
-  let size = Math.min(80, WIDTH/8) * scale;
-  let startX = WIDTH/2 - (5*(size+10))/2;
-  let colors = ["#e74c3c","#f39c12","#2ecc71","#3498db","#9b59b6","#1abc9c","#e67e22","#8e44ad","#34495e","#f1c40f"];
-  for(let i=0;i<10;i++){
-    let x = startX + (i%5)*(size+10);
-    let y = startY + Math.floor(i/5)*(size+10);
-    drawButton(x,y,size,size,i,colors[i],"key"+i);
-  }
+function drawKeypad(startY,scaleFactor=1){
+let size=Math.min(80,WIDTH/8)*scaleFactor;
+let startX=WIDTH/2-(5*(size+10))/2;
+let colors=["#e74c3c","#f39c12","#2ecc71","#3498db","#9b59b6","#1abc9c","#e67e22","#8e44ad","#34495e","#f1c40f"];
+
+for(let i=0;i<10;i++){
+let x=startX+(i%5)*(size+10);
+let y=startY+Math.floor(i/5)*(size+10);
+drawButton(x,y,size,size,i,colors[i],"key"+i);
+}
 }
 
-// ---------- DRAW ARROWS ----------
+// ---------- ARROWS ----------
 function drawArrows(arr){
-  arr.forEach(s=>{
-    ctx.fillStyle = arrowColors[s.num];
-    ctx.beginPath();
-    ctx.arc(s.x,s.y,Math.max(6,WIDTH/60),0,Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle="black";
-    ctx.font="14px Arial";
-    ctx.textAlign="center";
-    ctx.fillText(s.num,s.x,s.y+3);
-  });
+arr.forEach(s=>{
+ctx.fillStyle=arrowColors[s.num];
+ctx.beginPath();
+ctx.arc(s.x,s.y,Math.max(6,WIDTH/50),0,Math.PI*2);
+ctx.fill();
+ctx.fillStyle="black";
+ctx.font="14px Arial";
+ctx.textAlign="center";
+ctx.fillText(s.num,s.x,s.y+3);
+});
 }
 
-// ---------- INPUT SCREEN ----------
+// ---------- INPUT ----------
 function drawInput(){
-  ctx.fillStyle="black"; ctx.font="32px Arial"; ctx.textAlign="right";
-  ctx.fillText("Rounds:", WIDTH*0.38, HEIGHT*0.245);
-  ctx.fillText("Arrows:", WIDTH*0.38, HEIGHT*0.345);
+ctx.fillStyle="black";
+ctx.font="32px Arial";
+ctx.fillText("Rounds:",WIDTH*0.1,HEIGHT*0.25);
+ctx.fillText("Arrows:",WIDTH*0.1,HEIGHT*0.35);
 
-  ctx.strokeStyle = activeInput==="rounds"?"green":"black";
-  ctx.strokeRect(WIDTH*0.4, HEIGHT*0.22, WIDTH*0.3, 50);
-  ctx.strokeStyle = activeInput==="arrows"?"green":"black";
-  ctx.strokeRect(WIDTH*0.4, HEIGHT*0.32, WIDTH*0.3, 50);
+ctx.strokeStyle=activeInput==="rounds"?"green":"black";
+ctx.strokeRect(WIDTH*0.4,HEIGHT*0.22,WIDTH*0.3,50);
 
-  ctx.textAlign="left"; ctx.textBaseline="middle";
-  ctx.fillText(inputRounds, WIDTH*0.45, HEIGHT*0.22+25);
-  ctx.fillText(inputArrows, WIDTH*0.45, HEIGHT*0.32+25);
+ctx.strokeStyle=activeInput==="arrows"?"green":"black";
+ctx.strokeRect(WIDTH*0.4,HEIGHT*0.32,WIDTH*0.3,50);
 
-  let kbStartY = (HEIGHT*0.4 + HEIGHT-110)/2 - 60;
-  drawKeypad(kbStartY, 1.5);
+// центрированный текст
+ctx.textAlign="left";
+ctx.textBaseline="middle";
+ctx.fillText(inputRounds,WIDTH*0.45,HEIGHT*0.22+25);
+ctx.fillText(inputArrows,WIDTH*0.45,HEIGHT*0.32+25);
 
-  drawButton(WIDTH*0.15, HEIGHT-110, 220, 70, "DEL", "#e74c3c","del");
-  drawButton(WIDTH*0.55, HEIGHT-110, 260, 70, "START", "#2ecc71","start");
+// клавиатура по центру
+drawKeypad(HEIGHT*0.45,1.2);
+
+// увеличенные кнопки DEL и START
+drawButton(WIDTH*0.15,HEIGHT-110,180,70,"DEL","#e74c3c","del");
+drawButton(WIDTH*0.55,HEIGHT-110,200,70,"START","#2ecc71","start");
 }
 
-// ---------- GAME SCREEN ----------
+// ---------- GAME ----------
 function drawGame(){
-  drawTarget();
-  drawArrows(shots.filter(s=>s.round===currentRound));
+drawTarget();
+drawArrows(shots.filter(s=>s.round===currentRound));
 
-  let roundScore = shots.filter(s=>s.round===currentRound).reduce((a,s)=>a+getScore(s.x,s.y),0);
-  let totalScore = shots.reduce((a,s)=>a+getScore(s.x,s.y),0);
+let rs=shots.filter(s=>s.round===currentRound).reduce((a,s)=>a+getScore(s.x,s.y),0);
+let ts=shots.reduce((a,s)=>a+getScore(s.x,s.y),0);
 
-  ctx.fillStyle="black"; ctx.font="20px Arial"; ctx.textAlign="right";
-  ctx.fillText(`Round ${currentRound}/${numRounds}`, WIDTH-20, 30);
-  ctx.fillText(`Arrow ${currentShot}/${maxArrows}`, WIDTH-20, 60);
-  ctx.fillText(`Round Score ${roundScore}`, WIDTH-20, 90);
-  ctx.fillText(`Total ${totalScore}`, WIDTH-20, 120);
+ctx.fillStyle="black";
+ctx.font="20px Arial";
+ctx.fillText(`Round ${currentRound}/${numRounds}`,WIDTH-200,30);
+ctx.fillText(`Arrow ${currentShot}/${maxArrows}`,WIDTH-200,60);
+ctx.fillText(`Round Score ${rs}`,WIDTH-200,90);
+ctx.fillText(`Total ${ts}`,WIDTH-200,120);
 
-  let w = WIDTH/3 - 5;
-  drawButton(5, HEIGHT-60, w, 60, "Hist", "#3498db", "hist");
-  drawButton(5+w+5, HEIGHT-60, w, 60, "Reset", "#f39c12", "reset");
-  drawButton(5+2*(w+5), HEIGHT-60, w, 60, "Restart", "#e74c3c", "restart");
+// кнопки Hist, Reset, Restart
+let w=WIDTH/3-5;
+drawButton(5,HEIGHT-60,w,60,"Hist","#3498db","hist");
+drawButton(5+w+5,HEIGHT-60,w,60,"Reset","#f39c12","reset");
+drawButton(5+2*(w+5),HEIGHT-60,w,60,"Restart","#e74c3c","restart");
 
-  if(currentShot>=maxArrows && currentRound<numRounds){
-    drawButton(WIDTH/2-100, HEIGHT-140, 200, 60, "Next", "#27ae60","next");
-  }
+if(currentShot>=maxArrows&&currentRound<numRounds){
+drawButton(WIDTH/2-100,HEIGHT-140,200,60,"Next","#27ae60","next");
+}
 }
 
-// ---------- NUMBER SCREEN ----------
+// ---------- NUMBER ----------
 function drawNumber(){
-  drawTarget();
-  drawArrows(shots.filter(s=>s.round===currentRound));
+drawTarget();
+drawArrows(shots.filter(s=>s.round===currentRound));
 
-  let kbStartY = HEIGHT/2-100;
-  drawKeypad(kbStartY,1.5);
+// если номер выбран
+if(selectedNumber){
+ctx.fillStyle="black";
+ctx.font="22px Arial";
+ctx.fillText(selectedNumber,clickPos.x,clickPos.y-20);
+}
 
-  drawButton(WIDTH/2-120, HEIGHT-150, 240, 60,"READY","#2ecc71","ready");
-  drawButton(WIDTH/2-120, HEIGHT-80, 240, 60,"DEL","#e74c3c","delNum");
+// клавиатура теперь **выше**, между мишенью и нижними кнопками, увеличенная
+drawKeypad(HEIGHT*0.55,1.5);
+
+drawButton(WIDTH/2-120,HEIGHT-150,240,60,"READY","#2ecc71","ready");
+drawButton(WIDTH/2-120,HEIGHT-80,240,60,"DEL","#e74c3c","delNum");
+}
+
+// ---------- HISTORY ----------
+function drawHistory(){
+drawTarget();
+drawArrows(shots.filter(s=>s.round===histRound));
+
+let rs=shots.filter(s=>s.round===histRound).reduce((a,s)=>a+getScore(s.x,s.y),0);
+ctx.fillText(`Round ${histRound} Score ${rs}`,50,40);
+
+let w=WIDTH/4-10;
+drawButton(5,HEIGHT-60,w,60,"Game","#2ecc71","game");
+drawButton(5+w+5,HEIGHT-60,w,60,"Prev","#3498db","prev");
+drawButton(5+2*(w+5),HEIGHT-60,w,60,"Next","#3498db","nextH");
+drawButton(5+3*(w+5),HEIGHT-60,w,60,"All","#9b59b6","all");
+}
+
+// ---------- ALL ----------
+function drawAll(){
+drawTarget();
+drawArrows(shots);
+
+let ts=shots.reduce((a,s)=>a+getScore(s.x,s.y),0);
+ctx.fillText(`Total ${ts}`,10,30);
+
+drawButton(10,HEIGHT-60,100,60,"Game","#2ecc71","game");
+drawButton(120,HEIGHT-60,120,60,"Back","#3498db","back");
 }
 
 // ---------- CLICK ----------
-canvas.addEventListener("mousedown", e=>{
-  let rect = canvas.getBoundingClientRect();
-  let x = e.clientX - rect.left;
-  let y = e.clientY - rect.top;
-  pressedButton = null;
+canvas.addEventListener("mousedown",e=>{
+let r=canvas.getBoundingClientRect();
+let x=e.clientX-r.left;
+let y=e.clientY-r.top;
 
-  if(state==="input"){
-    if(y>HEIGHT*0.22 && y<HEIGHT*0.28) activeInput="rounds";
-    if(y>HEIGHT*0.32 && y<HEIGHT*0.38) activeInput="arrows";
+function press(id){pressedButton=id;pressTime[id]=Date.now();}
 
-    if(y>HEIGHT-110){
-      if(x<WIDTH/2){
-        pressedButton="del";
-        if(activeInput==="rounds") inputRounds=inputRounds.slice(0,-1);
-        else inputArrows=inputArrows.slice(0,-1);
-      }else{
-        pressedButton="start";
-        numRounds=parseInt(inputRounds);
-        maxArrows=parseInt(inputArrows);
-        if(numRounds&&maxArrows) state="game";
-      }
-    }
+if(state==="input"){
+if(y>HEIGHT*0.22&&y<HEIGHT*0.28)activeInput="rounds";
+if(y>HEIGHT*0.32&&y<HEIGHT*0.38)activeInput="arrows";
 
-    let size=Math.min(80,WIDTH/8)*1.5;
-    let startX=WIDTH/2-(5*(size+10))/2;
-    let startY = (HEIGHT*0.4 + HEIGHT-110)/2 - 60;
+if(y>HEIGHT-110){
+if(x<WIDTH/2){
+press("del");
+if(activeInput==="rounds")inputRounds=inputRounds.slice(0,-1);
+else inputArrows=inputArrows.slice(0,-1);
+}else{
+press("start");
+numRounds=parseInt(inputRounds);
+maxArrows=parseInt(inputArrows);
+if(numRounds&&maxArrows)state="game";
+}
+}
 
-    if(y>startY && y<startY+size*2){
-      let col = Math.floor((x-startX)/(size+10));
-      let row = Math.floor((y-startY)/(size+10));
-      let n = row*5+col;
-      if(n>=0 && n<=9){
-        pressedButton="key"+n;
-        if(activeInput==="rounds") inputRounds+=n;
-        else inputArrows+=n;
-      }
-    }
-  }
+let size=Math.min(80,WIDTH/8)*1.2;
+let startX=WIDTH/2-(5*(size+10))/2;
+let startY=HEIGHT*0.45;
 
-  if(state==="game"){
-    // касание мишени
-    let dx = x-center.x, dy = y-center.y;
-    if(Math.sqrt(dx*dx+dy*dy)<=TARGET_RADIUS && currentShot<maxArrows){
-      clickPos={x,y};
-      selectedNumber="";
-      state="number";
-    }
-  }
+if(y>startY&&y<startY+size*2){
+let col=Math.floor((x-startX)/(size+10));
+let row=Math.floor((y-startY)/(size+10));
+let n=row*5+col;
+if(n>=0&&n<=9){
+press("key"+n);
+if(activeInput==="rounds")inputRounds+=n;
+else inputArrows+=n;
+}
+}
+}
+
+else if(state==="game"){
+if(y>HEIGHT-60){
+let w=WIDTH/3-5;
+if(x<5+w){press("hist"); state="history"; histRound=currentRound;}
+else if(x<5+2*(w+5)){press("reset"); shots=shots.filter(s=>s.round!==currentRound); currentShot=0;}
+else{press("restart"); shots=[]; arrowColors={}; currentRound=1; currentShot=0;}
+}
+else if(currentShot>=maxArrows&&currentRound<numRounds){
+if(y>HEIGHT-140){press("next"); currentRound++; currentShot=0;}
+}
+else{
+clickPos={x,y};
+selectedNumber="";
+state="number";
+}
+}
+
+else if(state==="number"){
+if(y>HEIGHT-80){press("delNum"); selectedNumber=selectedNumber.slice(0,-1);}
+else if(y>HEIGHT-150){
+press("ready");
+if(!selectedNumber)return;
+
+// 🚫 запрещаем выбрать тот же номер стрелы в текущем раунде
+if(shots.some(s=>s.round===currentRound&&s.num===selectedNumber))return;
+
+// добавляем стрелу
+arrowColors[selectedNumber]=arrowColors[selectedNumber]||`rgb(${Math.random()*255},${Math.random()*255},${Math.random()*255})`;
+shots.push({x:clickPos.x,y:clickPos.y,num:selectedNumber,round:currentRound});
+currentShot++;
+
+// ✅ завершение игры после последней стрелы
+if(currentShot>=maxArrows){
+if(currentRound>=numRounds)state="history";
+else state="game";
+}else state="game";
+selectedNumber="";
+}
+
+let size=Math.min(70,WIDTH/8)*1.5;
+let startX=WIDTH/2-(5*(size+10))/2;
+let startY=HEIGHT*0.55;
+
+if(y>startY&&y<startY+size*2){
+let col=Math.floor((x-startX)/(size+10));
+let row=Math.floor((y-startY)/(size+10));
+let n=row*5+col;
+if(n>=0&&n<=9){
+press("key"+n);
+selectedNumber+=n;
+}
+}
+}
+
+else if(state==="history"){
+if(y>HEIGHT-60){
+let w=WIDTH/4-10;
+if(x<5+w){press("game"); state="game";}
+else if(x<5+2*(w+5)){press("prev"); histRound=Math.max(1,histRound-1);}
+else if(x<5+3*(w+5)){press("nextH"); histRound=Math.min(numRounds,histRound+1);}
+else{press("all"); state="all";}
+}
+}
+
+else if(state==="all"){
+if(y>HEIGHT-60){
+if(x<100){press("game"); state="game";}
+else{press("back"); state="history";}
+}
+}
 });
 
-canvas.addEventListener("mouseup", ()=>{pressedButton=null;});
+canvas.addEventListener("mouseup",()=>pressedButton=null);
 
 // ---------- LOOP ----------
 function loop(){
-  ctx.clearRect(0,0,WIDTH,HEIGHT);
-  if(state==="input") drawInput();
-  else if(state==="game") drawGame();
-  else if(state==="number") drawNumber();
-  requestAnimationFrame(loop);
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+WIDTH=canvas.width;
+HEIGHT=canvas.height;
+center={x:WIDTH/2,y:HEIGHT/3};
+
+TARGET_RADIUS=Math.min(WIDTH,HEIGHT)/5*1.5;
+RED_RADIUS=TARGET_RADIUS*0.35;
+
+if(state==="input")drawInput();
+else if(state==="game")drawGame();
+else if(state==="number")drawNumber();
+else if(state==="history")drawHistory();
+else if(state==="all")drawAll();
+
+requestAnimationFrame(loop);
 }
 loop();
 </script>
