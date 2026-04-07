@@ -94,7 +94,7 @@ ctx.fill();
 ctx.stroke();
 
 ctx.beginPath();
-// 🔴 красный круг уменьшен на 10%
+// красный круг уменьшен на 10%
 ctx.arc(center.x,center.y,RED_RADIUS*0.9,0,Math.PI*2);
 ctx.fillStyle="red";
 ctx.fill();
@@ -117,7 +117,6 @@ drawButton(x,y,size,size,i,colors[i],"key"+i);
 function drawArrows(arr){
 arr.forEach(s=>{
 ctx.fillStyle=arrowColors[s.num];
-// 🎯 делаем стрелы меньше, чтобы не мешали
 ctx.beginPath();
 ctx.arc(s.x,s.y,Math.max(6,WIDTH/50),0,Math.PI*2);
 ctx.fill();
@@ -132,7 +131,6 @@ ctx.fillText(s.num,s.x,s.y+3);
 function drawInput(){
 ctx.fillStyle="black";
 ctx.font="32px Arial";
-
 ctx.fillText("Rounds:",WIDTH*0.1,HEIGHT*0.25);
 ctx.fillText("Arrows:",WIDTH*0.1,HEIGHT*0.35);
 
@@ -142,17 +140,16 @@ ctx.strokeRect(WIDTH*0.4,HEIGHT*0.22,WIDTH*0.3,50);
 ctx.strokeStyle=activeInput==="arrows"?"green":"black";
 ctx.strokeRect(WIDTH*0.4,HEIGHT*0.32,WIDTH*0.3,50);
 
-// ✅ центрированный текст
+// центрированный текст
 ctx.textAlign="left";
 ctx.textBaseline="middle";
-
 ctx.fillText(inputRounds,WIDTH*0.45,HEIGHT*0.22+25);
 ctx.fillText(inputArrows,WIDTH*0.45,HEIGHT*0.32+25);
 
-// 📍 клавиатура по центру
+// клавиатура по центру
 drawKeypad(HEIGHT*0.45,1.2);
 
-// 🔘 увеличенные кнопки DEL и START
+// увеличенные кнопки DEL и START
 drawButton(WIDTH*0.15,HEIGHT-110,180,70,"DEL","#e74c3c","del");
 drawButton(WIDTH*0.55,HEIGHT-110,200,70,"START","#2ecc71","start");
 }
@@ -167,13 +164,12 @@ let ts=shots.reduce((a,s)=>a+getScore(s.x,s.y),0);
 
 ctx.fillStyle="black";
 ctx.font="20px Arial";
-// 📝 сдвигаем текст правее
 ctx.fillText(`Round ${currentRound}/${numRounds}`,WIDTH-200,30);
 ctx.fillText(`Arrow ${currentShot}/${maxArrows}`,WIDTH-200,60);
 ctx.fillText(`Round Score ${rs}`,WIDTH-200,90);
 ctx.fillText(`Total ${ts}`,WIDTH-200,120);
 
-// 🔘 кнопки Hist, Reset, Restart увеличены
+// кнопки Hist, Reset, Restart
 let w=WIDTH/3-5;
 drawButton(5,HEIGHT-60,w,60,"Hist","#3498db","hist");
 drawButton(5+w+5,HEIGHT-60,w,60,"Reset","#f39c12","reset");
@@ -189,15 +185,18 @@ function drawNumber(){
 drawTarget();
 drawArrows(shots.filter(s=>s.round===currentRound));
 
+// если номер выбран
 if(selectedNumber){
 ctx.fillStyle="black";
 ctx.font="22px Arial";
 ctx.fillText(selectedNumber,clickPos.x,clickPos.y-20);
 }
 
-drawKeypad(HEIGHT-250);
-drawButton(WIDTH/2-120,HEIGHT-120,240,60,"READY","#2ecc71","ready");
-drawButton(WIDTH/2-120,HEIGHT-60,240,60,"DEL","#e74c3c","delNum");
+// клавиатура теперь **выше**, между мишенью и нижними кнопками, увеличенная
+drawKeypad(HEIGHT*0.55,1.5);
+
+drawButton(WIDTH/2-120,HEIGHT-150,240,60,"READY","#2ecc71","ready");
+drawButton(WIDTH/2-120,HEIGHT-80,240,60,"DEL","#e74c3c","delNum");
 }
 
 // ---------- HISTORY ----------
@@ -286,25 +285,30 @@ state="number";
 }
 
 else if(state==="number"){
-if(y>HEIGHT-60){press("delNum"); selectedNumber=selectedNumber.slice(0,-1);}
-else if(y>HEIGHT-120){
+if(y>HEIGHT-80){press("delNum"); selectedNumber=selectedNumber.slice(0,-1);}
+else if(y>HEIGHT-150){
 press("ready");
 if(!selectedNumber)return;
 
-shots.push({
-x:clickPos.x,
-y:clickPos.y,
-num:selectedNumber,
-round:currentRound
-});
+// 🚫 запрещаем выбрать тот же номер стрелы в текущем раунде
+if(shots.some(s=>s.round===currentRound&&s.num===selectedNumber))return;
 
+// добавляем стрелу
+arrowColors[selectedNumber]=arrowColors[selectedNumber]||`rgb(${Math.random()*255},${Math.random()*255},${Math.random()*255})`;
+shots.push({x:clickPos.x,y:clickPos.y,num:selectedNumber,round:currentRound});
 currentShot++;
-state="game";
+
+// ✅ завершение игры после последней стрелы
+if(currentShot>=maxArrows){
+if(currentRound>=numRounds)state="history";
+else state="game";
+}else state="game";
+selectedNumber="";
 }
 
-let size=Math.min(70,WIDTH/9);
+let size=Math.min(70,WIDTH/8)*1.5;
 let startX=WIDTH/2-(5*(size+10))/2;
-let startY=HEIGHT-250;
+let startY=HEIGHT*0.55;
 
 if(y>startY&&y<startY+size*2){
 let col=Math.floor((x-startX)/(size+10));
@@ -346,7 +350,7 @@ HEIGHT=canvas.height;
 center={x:WIDTH/2,y:HEIGHT/3};
 
 TARGET_RADIUS=Math.min(WIDTH,HEIGHT)/5*1.5;
-RED_RADIUS=TARGET_RADIUS*0.35; // уменьшили на 10%
+RED_RADIUS=TARGET_RADIUS*0.35;
 
 if(state==="input")drawInput();
 else if(state==="game")drawGame();
