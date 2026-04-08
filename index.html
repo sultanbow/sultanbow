@@ -88,7 +88,7 @@ bgImage.onload = () => { bgLoaded = true; }
 function drawInputWithBackground(){
     if(bgLoaded){
         ctx.save();
-        ctx.globalAlpha = 0.5;
+        ctx.globalAlpha = 0.7;
         ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
         ctx.restore();
     } else {
