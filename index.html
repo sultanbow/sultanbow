@@ -67,7 +67,50 @@ const FIXED_COLORS = [
 const bgImage = new Image();
 bgImage.src = "https://i.pinimg.com/736x/6c/16/0d/6c160dbfbb76eccf4de9af4cf832043c.jpg"; // замени на своё изображение
 let bgLoaded = false;
-bgImage.onload = () => { bgLoaded = true; 
+bgImage.onload = () => { bgLoaded = true; }
+
+// ---------- DRAW INPUT с прозрачностью фона ----------
+function drawInput(){
+    if(bgLoaded){
+        ctx.save();
+        ctx.globalAlpha = 0.6; // прозрачность 60%
+        ctx.drawImage(bgImage,0,0,WIDTH,HEIGHT);
+        ctx.restore();
+    } else {
+        ctx.fillStyle="#2c3e50";
+        ctx.fillRect(0,0,WIDTH,HEIGHT);
+    }
+
+    // остальной код рисования кнопок, текста и клавиатуры
+    ctx.fillStyle="#2c3e50";
+    ctx.font=`${28*1.3}px Arial`;
+
+    let inputX=WIDTH*0.4;
+
+    ctx.textAlign="right";
+    ctx.textBaseline="middle";
+    ctx.fillText("Rounds:",inputX-20,HEIGHT*0.22+25);
+    ctx.fillText("Arrows:",inputX-20,HEIGHT*0.32+25);
+
+    ctx.strokeStyle=activeInput==="rounds"?"#4CAF50":"#999";
+    ctx.strokeRect(inputX,HEIGHT*0.22,WIDTH*0.3,50);
+
+    ctx.strokeStyle=activeInput==="arrows"?"#4CAF50":"#999";
+    ctx.strokeRect(inputX,HEIGHT*0.32,WIDTH*0.3,50);
+
+    ctx.textAlign="left";
+    ctx.fillText(inputRounds,inputX+10,HEIGHT*0.22+25);
+    ctx.fillText(inputArrows,inputX+10,HEIGHT*0.32+25);
+
+    drawKeypad();
+
+    let bottomHeight = 96*1.2;
+    let bottomY = HEIGHT-bottomHeight-10;
+    let btnCount = 2;
+    let gap = 20;
+    let btnW = (WIDTH-(btnCount+1)*gap)/btnCount;
+    drawButton(gap,bottomY,btnW,bottomHeight,"DEL","#e74c3c","del");
+    drawButton(2*gap+btnW,bottomY,btnW,bottomHeight,"START","#2ecc71","start");
 }
   
 // ---------- SCORE ----------
