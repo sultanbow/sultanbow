@@ -48,20 +48,20 @@ let pressTime={};
 let histRound=1;
 
 // ---------- FIXED COLORS ----------
-const FIXED_COLORS = [
-"#FFFF00", // Желтый
-"#FFA500", // Оранжевый
-"#FF0000", // Красный
-"#FFB6C1", // Розовый
-"#ADFF2F", // Светло-зеленый
-"#00FF00", // Зеленый
-"#00FFFF", // Голубой
-"#0000FF", // Синий
-"#800080", // Фиолетовый
-"#8B4513", // Коричневый
-"#D2B48C", // Светло-коричневый
-"#000000"  // Черный
-];
+const FIXED_COLORS = {
+"1":"#FFFF00", // Желтый
+"2":"#FFA500", // Оранжевый
+"3":"#FF0000", // Красный
+"4":"#FFB6C1", // Розовый
+"5":"#ADFF2F", // Светло-зеленый
+"6":"#00FF00", // Зеленый
+"7":"#00FFFF", // Голубой
+"8":"#0000FF", // Синий
+"9":"#800080", // Фиолетовый
+"10":"#8B4513", // Коричневый
+"11":"#D2B48C", // Светло-коричневый
+"12":"#000000"  // Черный
+};
 
 // ---------- SCORE ----------
 function getScore(x,y){
@@ -77,7 +77,7 @@ function drawButton(x,y,w,h,text,color,id){
 let offsetY=0;
 if(pressTime[id]){
 let dt=Date.now()-pressTime[id];
-if(dt<120) offsetY=4; // анимация нажатия
+if(dt<120) offsetY=4;
 else delete pressTime[id];
 }
 
@@ -162,13 +162,10 @@ return null;
 
 // ---------- ARROWS ----------
 function drawArrows(arr){
-arr.forEach((s,i)=>{
-// фиксированные цвета для первых 12
-if(i<12){
-arrowColors[s.num] = arrowColors[s.num] || FIXED_COLORS[i];
-} else {
-arrowColors[s.num] = arrowColors[s.num] || `hsl(${Math.random()*360},70%,60%)`;
-}
+arr.forEach((s)=>{
+// цвет всегда фиксирован по номеру
+arrowColors[s.num] = arrowColors[s.num] || FIXED_COLORS[s.num] || `hsl(${Math.random()*360},70%,60%)`;
+
 ctx.fillStyle=arrowColors[s.num];
 ctx.beginPath();
 ctx.arc(s.x,s.y,Math.max(6,WIDTH/50),0,Math.PI*2);
@@ -214,38 +211,6 @@ drawButton(gap,bottomY,btnW,bottomHeight,"DEL","#e74c3c","del");
 drawButton(2*gap+btnW,bottomY,btnW,bottomHeight,"START","#2ecc71","start");
 }
 
-// ---------- GAME ----------
-function drawGame(){
-drawTarget();
-drawArrows(shots.filter(s=>s.round===currentRound));
-
-let rs=shots.filter(s=>s.round===currentRound).reduce((a,s)=>a+getScore(s.x,s.y),0);
-let ts=shots.reduce((a,s)=>a+getScore(s.x,s.y),0);
-
-ctx.fillStyle="#2c3e50";
-ctx.font=`${20*1.3}px Arial`;
-ctx.textAlign="left";
-ctx.fillText(`Round ${currentRound}/${numRounds}`,WIDTH-280,40);
-ctx.fillText(`Arrow ${currentShot}/${maxArrows}`,WIDTH-280,70);
-ctx.fillText(`Round Score ${rs}`,WIDTH-280,100);
-ctx.fillText(`Total ${ts}`,WIDTH-280,130);
-
-let bottomHeight = 96*1.2;
-let bottomY = HEIGHT-bottomHeight-10;
-let gap = 20;
-let btnCount = 3;
-let btnW = (WIDTH-(btnCount+1)*gap)/btnCount;
-drawButton(gap,bottomY,btnW,bottomHeight,"Hist","#3498db","hist");
-drawButton(2*gap+btnW,bottomY,btnW,bottomHeight,"Reset","#f39c12","reset");
-drawButton(3*gap+2*btnW,bottomY,btnW,bottomHeight,"Restart","#e74c3c","restart");
-
-// Next button над нижними кнопками
-if(currentShot>=maxArrows && currentRound<numRounds){
-let nextHeight = bottomHeight*0.9;
-drawButton(0,bottomY-nextHeight-gap,WIDTH,nextHeight,"Next","#27ae60","next");
-}
-}
-
 // ---------- NUMBER ----------
 function drawNumber(){
 drawTarget();
@@ -269,155 +234,37 @@ drawButton(gap,bottomY,btnW,bottomHeight,"DEL","#e74c3c","delNum");
 drawButton(2*gap+btnW,bottomY,btnW,bottomHeight,"READY","#2ecc71","ready");
 }
 
-// ---------- HISTORY ----------
-function drawHistory(){
+// ---------- GAME ----------
+function drawGame(){
 drawTarget();
-drawArrows(shots.filter(s=>s.round===histRound));
+drawArrows(shots.filter(s=>s.round===currentRound));
+
+let rs=shots.filter(s=>s.round===currentRound).reduce((a,s)=>a+getScore(s.x,s.y),0);
+let ts=shots.reduce((a,s)=>a+getScore(s.x,s.y),0);
 
 ctx.fillStyle="#2c3e50";
 ctx.font=`${20*1.3}px Arial`;
 ctx.textAlign="left";
-ctx.fillText(`Round ${histRound}`,50,40);
+ctx.fillText(`Round ${currentRound}/${numRounds}`,20,40);
+ctx.fillText(`Arrow ${currentShot}/${maxArrows}`,20,70);
+ctx.fillText(`Round Score ${rs}`,20,100);
+ctx.fillText(`Total ${ts}`,20,130);
 
-let bottomHeight = 96*1.2;
-let bottomY = HEIGHT-bottomHeight-10;
-let btnCount = 4;
-let gap = 20;
-let btnW = (WIDTH-(btnCount+1)*gap)/btnCount;
-drawButton(gap,bottomY,btnW,bottomHeight,"Game","#2ecc71","game");
-drawButton(2*gap+btnW,bottomY,btnW,bottomHeight,"Prev","#3498db","prev");
-drawButton(3*gap+2*btnW,bottomY,btnW,bottomHeight,"Next","#3498db","nextH");
-drawButton(4*gap+3*btnW,bottomY,btnW,bottomHeight,"All","#9b59b6","all");
-}
-
-// ---------- ALL ----------
-function drawAll(){
-drawTarget();
-drawArrows(shots);
-
-ctx.fillStyle="#2c3e50";
-ctx.font=`${20*1.3}px Arial`;
-ctx.fillText("All shots",20,30);
-
-let bottomHeight = 96*1.2;
-let bottomY = HEIGHT-bottomHeight-10;
-let btnCount = 2;
-let gap = 20;
-let btnW = (WIDTH-(btnCount+1)*gap)/btnCount;
-drawButton(gap,bottomY,btnW,bottomHeight,"Game","#2ecc71","game");
-drawButton(2*gap+btnW,bottomY,btnW,bottomHeight,"Back","#3498db","back");
-}
-
-// ---------- CLICK ----------
-canvas.addEventListener("mousedown",e=>{
-let r=canvas.getBoundingClientRect();
-let x=e.clientX-r.left;
-let y=e.clientY-r.top;
-
-function press(id){pressedButton=id;pressTime[id]=Date.now();}
-
-let key=handleKeypadClick(x,y);
-if(key!==null){
-if(state==="input"){
-if(activeInput==="rounds")inputRounds+=key;
-else inputArrows+=key;
-}
-else if(state==="number"){
-selectedNumber+=key;
-}
-return;
-}
-
-// обработка состояний
-if(state==="input"){
-let bottomHeight = 96*1.2;
-let bottomY = HEIGHT-bottomHeight-10;
-let gap = 20;
-let btnCount = 2;
-let btnW = (WIDTH-(btnCount+1)*gap)/btnCount;
-if(y>bottomY){
-if(x<gap+btnW){press("del");
-if(activeInput==="rounds")inputRounds=inputRounds.slice(0,-1);
-else inputArrows=inputArrows.slice(0,-1);
-}else if(x<2*gap+2*btnW){press("start"); numRounds=parseInt(inputRounds); maxArrows=parseInt(inputArrows); if(numRounds&&maxArrows)state="game";}
-}
-if(y>HEIGHT*0.22 && y<HEIGHT*0.28) activeInput="rounds";
-if(y>HEIGHT*0.32 && y<HEIGHT*0.38) activeInput="arrows";
-}
-
-else if(state==="game"){
 let bottomHeight = 96*1.2;
 let bottomY = HEIGHT-bottomHeight-10;
 let gap = 20;
 let btnCount = 3;
 let btnW = (WIDTH-(btnCount+1)*gap)/btnCount;
-if(y>bottomY){
-if(x<gap+btnW){press("hist"); state="history"; histRound=currentRound;}
-else if(x<2*gap+2*btnW){press("reset"); shots=shots.filter(s=>s.round!==currentRound); currentShot=0;}
-else{press("restart"); shots=[]; arrowColors={}; currentRound=1; currentShot=0;}
-}
-else if(currentShot>=maxArrows&&currentRound<numRounds){
+drawButton(gap,bottomY,btnW,bottomHeight,"Hist","#3498db","hist");
+drawButton(2*gap+btnW,bottomY,btnW,bottomHeight,"Reset","#f39c12","reset");
+drawButton(3*gap+2*btnW,bottomY,btnW,bottomHeight,"Restart","#e74c3c","restart");
+
+// Next button над нижними кнопками
+if(currentShot>=maxArrows && currentRound<numRounds){
 let nextHeight = bottomHeight*0.9;
-if(y>bottomY-nextHeight-20){press("next"); currentRound++; currentShot=0;}
-}
-else{
-clickPos={x,y};
-selectedNumber="";
-state="number";
+drawButton(0,bottomY-nextHeight-gap,WIDTH,nextHeight,"Next","#27ae60","next");
 }
 }
-
-else if(state==="number"){
-let bottomHeight = 96*1.2;
-let bottomY = HEIGHT-bottomHeight-10;
-let gap = 20;
-let btnCount = 2;
-let btnW = (WIDTH-(btnCount+1)*gap)/btnCount;
-if(y>bottomY && y<bottomY+bottomHeight){
-if(x<gap+btnW){press("delNum"); selectedNumber=selectedNumber.slice(0,-1);}
-else if(x<2*gap+2*btnW){press("ready"); 
-if(!selectedNumber) return;
-if(shots.some(s=>s.round===currentRound&&s.num===selectedNumber)) return;
-arrowColors[selectedNumber]=arrowColors[selectedNumber]|| `hsl(${Math.random()*360},70%,60%)`;
-shots.push({x:clickPos.x,y:clickPos.y,num:selectedNumber,round:currentRound});
-currentShot++;
-if(currentShot>=maxArrows){
-if(currentRound>=numRounds)state="history";
-else state="game";
-}else state="game";
-selectedNumber="";
-}
-}
-}
-
-else if(state==="history"){
-let bottomHeight = 96*1.2;
-let bottomY = HEIGHT-bottomHeight-10;
-let btnCount = 4;
-let gap = 20;
-let btnW = (WIDTH-(btnCount+1)*gap)/btnCount;
-if(y>bottomY){
-if(x<gap+btnW){press("game"); state="game";}
-else if(x<2*gap+2*btnW){press("prev"); histRound=Math.max(1,histRound-1);}
-else if(x<3*gap+3*btnW){press("nextH"); histRound=Math.min(numRounds,histRound+1);}
-else{press("all"); state="all";}
-}
-}
-
-else if(state==="all"){
-let bottomHeight = 96*1.2;
-let bottomY = HEIGHT-bottomHeight-10;
-let btnCount = 2;
-let gap = 20;
-let btnW = (WIDTH-(btnCount+1)*gap)/btnCount;
-if(y>bottomY){
-if(x<gap+btnW){press("game"); state="game";}
-else{press("back"); state="history";}
-}
-}
-});
-
-canvas.addEventListener("mouseup",()=>pressedButton=null);
 
 // ---------- LOOP ----------
 function loop(){
@@ -437,8 +284,6 @@ KEY_START_Y=HEIGHT*0.55;
 if(state==="input")drawInput();
 else if(state==="game")drawGame();
 else if(state==="number")drawNumber();
-else if(state==="history")drawHistory();
-else if(state==="all")drawAll();
 
 requestAnimationFrame(loop);
 }
