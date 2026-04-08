@@ -213,23 +213,26 @@ return null;
 
 // ---------- ARROWS ----------
 function drawArrows(arr){
-arr.forEach((s,i)=>{
-// фиксированные цвета для первых 12
-if(i<12){
-arrowColors[s.num] = arrowColors[s.num] || FIXED_COLORS[i];
-} else {
-arrowColors[s.num] = arrowColors[s.num] || `hsl(${Math.random()*360},70%,60%)`;
-}
-ctx.fillStyle=arrowColors[s.num];
-ctx.beginPath();
-ctx.arc(s.x,s.y,Math.max(6,WIDTH/50),0,Math.PI*2);
-ctx.fill();
+    arr.forEach((s,i)=>{
+        // Фиксированные цвета для первых 12 стрел
+        if(i < 12){
+            // Цвет берется из FIXED_COLORS по порядку
+            arrowColors[s.num] = arrowColors[s.num] || FIXED_COLORS[i];
+        } else {
+            // Для остальных стрел — случайный цвет
+            arrowColors[s.num] = arrowColors[s.num] || `hsl(${Math.random()*360},70%,60%)`;
+        }
 
-ctx.fillStyle="black";
-ctx.font=`${14*1.3}px Arial`;
-ctx.textAlign="center";
-ctx.fillText(s.num,s.x,s.y+3);
-});
+        ctx.fillStyle = arrowColors[s.num];
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, Math.max(6, WIDTH/50), 0, Math.PI*2);
+        ctx.fill();
+
+        ctx.fillStyle="black";
+        ctx.font=`${14*1.3}px Arial`;
+        ctx.textAlign="center";
+        ctx.fillText(s.num, s.x, s.y+3);
+    });
 }
 
 // ---------- INPUT ----------
