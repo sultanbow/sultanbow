@@ -107,7 +107,7 @@ ctx.shadowBlur=0;
 
 // ---------- KEYPAD ----------
 function drawKeypad(){
-if(state==="history") return; // скрываем клавиатуру на истории
+if(state==="history" || state==="all") return; // скрываем клавиатуру на истории и all
 let startX=WIDTH/2-(5*(KEY_SIZE+KEY_GAP))/2;
 
 for(let i=0;i<10;i++){
@@ -127,7 +127,7 @@ active?"#4CAF50":"#34495e",
 
 // ---------- KEYPAD CLICK ----------
 function handleKeypadClick(x,y){
-if(state==="history") return null; // неактивна на истории
+if(state==="history" || state==="all") return null; // неактивна на истории и all
 let startX=WIDTH/2-(5*(KEY_SIZE+KEY_GAP))/2;
 
 if(y>=KEY_START_Y && y<=KEY_START_Y+KEY_SIZE*2+KEY_GAP){
@@ -183,7 +183,6 @@ ctx.fillText(inputArrows,inputX+10,HEIGHT*0.32+25);
 
 drawKeypad();
 
-// Нижние кнопки растянуты от края до края
 let bottomHeight = 96*1.2;
 let bottomY = HEIGHT-bottomHeight-10;
 let btnCount = 2;
@@ -208,7 +207,7 @@ ctx.fillText(`Arrow ${currentShot}/${maxArrows}`,WIDTH-220,70);
 ctx.fillText(`Round Score ${rs}`,WIDTH-220,100);
 ctx.fillText(`Total ${ts}`,WIDTH-220,130);
 
-// нижние кнопки растянуты от края до края
+// нижние кнопки
 let bottomHeight = 96*1.2;
 let bottomY = HEIGHT-bottomHeight-10;
 let btnCount = 3;
@@ -218,8 +217,10 @@ drawButton(gap,bottomY,btnW,bottomHeight,"Hist","#3498db","hist");
 drawButton(2*gap+btnW,bottomY,btnW,bottomHeight,"Reset","#f39c12","reset");
 drawButton(3*gap+2*btnW,bottomY,btnW,bottomHeight,"Restart","#e74c3c","restart");
 
-if(currentShot>=maxArrows&&currentRound<numRounds){
-drawButton(WIDTH/2-138,HEIGHT-192,276,96,"Next","#27ae60","next");
+// Next button над нижними кнопками, растянута от края до края
+if(currentShot>=maxArrows && currentRound<numRounds){
+let nextHeight = bottomHeight*0.9;
+drawButton(0,bottomY-nextHeight-gap,WIDTH,nextHeight,"Next","#27ae60","next");
 }
 }
 
@@ -236,7 +237,7 @@ ctx.fillText(selectedNumber,clickPos.x,clickPos.y-20);
 
 drawKeypad();
 
-// DEL и READY рядом, растянуты от края до края
+// DEL и READY рядом
 let bottomHeight = 96*1.2;
 let bottomY = HEIGHT-bottomHeight-10;
 let gap = 20;
@@ -253,7 +254,6 @@ drawArrows(shots.filter(s=>s.round===histRound));
 
 ctx.fillText(`Round ${histRound}`,50,40);
 
-// клавиатура скрыта
 let bottomHeight = 96*1.2;
 let bottomY = HEIGHT-bottomHeight-10;
 let btnCount = 4;
@@ -272,9 +272,7 @@ drawArrows(shots);
 
 ctx.fillText("All shots",20,30);
 
-drawKeypad();
-
-// кнопки растянуты
+// нижние кнопки только
 let bottomHeight = 96*1.2;
 let bottomY = HEIGHT-bottomHeight-10;
 let btnCount = 2;
@@ -305,10 +303,8 @@ selectedNumber+=key;
 return;
 }
 
+// обработка нажатий по состояниям
 if(state==="input"){
-if(y>HEIGHT*0.22&&y<HEIGHT*0.28)activeInput="rounds";
-if(y>HEIGHT*0.32&&y<HEIGHT*0.38)activeInput="arrows";
-
 let bottomHeight = 96*1.2;
 let bottomY = HEIGHT-bottomHeight-10;
 let gap = 20;
@@ -320,6 +316,8 @@ if(activeInput==="rounds")inputRounds=inputRounds.slice(0,-1);
 else inputArrows=inputArrows.slice(0,-1);
 }else if(x<2*gap+2*btnW){press("start"); numRounds=parseInt(inputRounds); maxArrows=parseInt(inputArrows); if(numRounds&&maxArrows)state="game";}
 }
+if(y>HEIGHT*0.22 && y<HEIGHT*0.28) activeInput="rounds";
+if(y>HEIGHT*0.32 && y<HEIGHT*0.38) activeInput="arrows";
 }
 
 else if(state==="game"){
@@ -334,7 +332,8 @@ else if(x<2*gap+2*btnW){press("reset"); shots=shots.filter(s=>s.round!==currentR
 else{press("restart"); shots=[]; arrowColors={}; currentRound=1; currentShot=0;}
 }
 else if(currentShot>=maxArrows&&currentRound<numRounds){
-if(y>HEIGHT-192){press("next"); currentRound++; currentShot=0;}
+let nextHeight = bottomHeight*0.9;
+if(y>bottomY-nextHeight-20){press("next"); currentRound++; currentShot=0;}
 }
 else{
 clickPos={x,y};
@@ -406,7 +405,7 @@ center={x:WIDTH/2,y:HEIGHT/3};
 TARGET_RADIUS=Math.min(WIDTH,HEIGHT)/5*1.5;
 RED_RADIUS=TARGET_RADIUS*0.35;
 
-// клавиатура увеличена на 25% сверху
+// клавиатура увеличена на 25%
 KEY_SIZE=Math.min(80,WIDTH/8)*1.25;
 KEY_GAP=12;
 KEY_START_Y=HEIGHT*0.55;
