@@ -214,12 +214,22 @@ return null;
 // ---------- ARROWS ----------
 function drawArrows(arr){
     arr.forEach((s,i)=>{
-        // Генерируем уникальный цвет для каждой стрелы
+        // Генерируем цвет для каждой стрелы
         if(!arrowColors[s.num]){
-            let hue = Math.floor(Math.random() * 360); // случайный оттенок
-            let saturation = 70 + Math.random()*20; // насыщенность 70-90%
-            let lightness = 50 + Math.random()*10;  // светлота 50-60%
-            arrowColors[s.num] = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+            // Находим индекс стрелы в общем массиве всех выстрелов
+            const allShots = shots.filter(shot => shot.num === s.num);
+            const shotIndex = allShots.findIndex(shot => shot === s);
+            
+            // Если это одна из первых 12 стрел этого номера - используем FIXED_COLORS
+            if(shotIndex < FIXED_COLORS.length && shotIndex !== -1) {
+                arrowColors[s.num] = FIXED_COLORS[shotIndex % FIXED_COLORS.length];
+            } else {
+                // Для остальных стрел - случайный цвет
+                let hue = Math.floor(Math.random() * 360);
+                let saturation = 70 + Math.random() * 20;
+                let lightness = 50 + Math.random() * 10;
+                arrowColors[s.num] = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+            }
         }
 
         ctx.fillStyle = arrowColors[s.num];
