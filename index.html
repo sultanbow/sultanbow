@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Shooting Analysis</title>
+<title>Qazaq mergeni</title> 
 <style>
 html,body{
 margin:0;
@@ -35,7 +35,7 @@ let WIDTH, HEIGHT, center, TARGET_RADIUS, RED_RADIUS;
 // 🔒 единые параметры клавиатуры
 let KEY_SIZE, KEY_GAP, KEY_START_Y;
 
-let shots=[];
+let shots=[]; 
 let arrowColors={};
 let currentRound=1,currentShot=0;
 let numRounds=0,maxArrows=0;
@@ -184,8 +184,9 @@ ctx.fillText(inputArrows,inputX+10,HEIGHT*0.32+25);
 
 drawKeypad();
 
-drawButton(WIDTH*0.15,HEIGHT-110,160,60,"DEL","#e74c3c","del");
-drawButton(WIDTH*0.55,HEIGHT-110,180,60,"START","#2ecc71","start");
+// 🔝 увеличенные нижние кнопки
+drawButton(WIDTH*0.15,HEIGHT-120,180,75,"DEL","#e74c3c","del");
+drawButton(WIDTH*0.55,HEIGHT-120,200,75,"START","#2ecc71","start");
 }
 
 // ---------- GAME ----------
@@ -204,12 +205,12 @@ ctx.fillText(`Round Score ${rs}`,WIDTH-220,100);
 ctx.fillText(`Total ${ts}`,WIDTH-220,130);
 
 let w=WIDTH/3-10;
-drawButton(5,HEIGHT-70,w,60,"Hist","#3498db","hist");
-drawButton(10+w,HEIGHT-70,w,60,"Reset","#f39c12","reset");
-drawButton(15+2*w,HEIGHT-70,w,60,"Restart","#e74c3c","restart");
+drawButton(5,HEIGHT-85,w,75,"Hist","#3498db","hist");
+drawButton(10+w,HEIGHT-85,w,75,"Reset","#f39c12","reset");
+drawButton(15+2*w,HEIGHT-85,w,75,"Restart","#e74c3c","restart");
 
 if(currentShot>=maxArrows&&currentRound<numRounds){
-drawButton(WIDTH/2-100,HEIGHT-150,200,60,"Next","#27ae60","next");
+drawButton(WIDTH/2-110,HEIGHT-170,220,75,"Next","#27ae60","next");
 }
 }
 
@@ -226,8 +227,8 @@ ctx.fillText(selectedNumber,clickPos.x,clickPos.y-20);
 
 drawKeypad();
 
-drawButton(WIDTH/2-120,HEIGHT-150,240,60,"READY","#2ecc71","ready");
-drawButton(WIDTH/2-120,HEIGHT-80,240,60,"DEL","#e74c3c","delNum");
+drawButton(WIDTH/2-140,HEIGHT-170,280,75,"READY","#2ecc71","ready");
+drawButton(WIDTH/2-140,HEIGHT-90,280,75,"DEL","#e74c3c","delNum");
 }
 
 // ---------- HISTORY ----------
@@ -240,10 +241,10 @@ ctx.fillText(`Round ${histRound}`,50,40);
 drawKeypad();
 
 let w=WIDTH/4-10;
-drawButton(5,HEIGHT-70,w,60,"Game","#2ecc71","game");
-drawButton(10+w,HEIGHT-70,w,60,"Prev","#3498db","prev");
-drawButton(15+2*w,HEIGHT-70,w,60,"Next","#3498db","nextH");
-drawButton(20+3*w,HEIGHT-70,w,60,"All","#9b59b6","all");
+drawButton(5,HEIGHT-85,w,75,"Game","#2ecc71","game");
+drawButton(10+w,HEIGHT-85,w,75,"Prev","#3498db","prev");
+drawButton(15+2*w,HEIGHT-85,w,75,"Next","#3498db","nextH");
+drawButton(20+3*w,HEIGHT-85,w,75,"All","#9b59b6","all");
 }
 
 // ---------- ALL ----------
@@ -255,106 +256,9 @@ ctx.fillText("All shots",20,30);
 
 drawKeypad();
 
-drawButton(10,HEIGHT-70,100,60,"Game","#2ecc71","game");
-drawButton(120,HEIGHT-70,120,60,"Back","#3498db","back");
+drawButton(10,HEIGHT-85,120,75,"Game","#2ecc71","game");
+drawButton(140,HEIGHT-85,140,75,"Back","#3498db","back");
 }
-
-// ---------- CLICK ----------
-canvas.addEventListener("mousedown",e=>{
-let r=canvas.getBoundingClientRect();
-let x=e.clientX-r.left;
-let y=e.clientY-r.top;
-
-function press(id){pressedButton=id;pressTime[id]=Date.now();}
-
-// 🔢 клавиатура для всех экранов
-let key=handleKeypadClick(x,y);
-if(key!==null){
-if(state==="input"){
-if(activeInput==="rounds")inputRounds+=key;
-else inputArrows+=key;
-}
-else if(state==="number"){
-selectedNumber+=key;
-}
-return;
-}
-
-if(state==="input"){
-if(y>HEIGHT*0.22&&y<HEIGHT*0.28)activeInput="rounds";
-if(y>HEIGHT*0.32&&y<HEIGHT*0.38)activeInput="arrows";
-
-if(y>HEIGHT-110){
-if(x<WIDTH/2){
-press("del");
-if(activeInput==="rounds")inputRounds=inputRounds.slice(0,-1);
-else inputArrows=inputArrows.slice(0,-1);
-}else{
-press("start");
-numRounds=parseInt(inputRounds);
-maxArrows=parseInt(inputArrows);
-if(numRounds&&maxArrows)state="game";
-}
-}
-}
-
-else if(state==="game"){
-if(y>HEIGHT-70){
-let w=WIDTH/3-10;
-if(x<5+w){press("hist"); state="history"; histRound=currentRound;}
-else if(x<10+2*w){press("reset"); shots=shots.filter(s=>s.round!==currentRound); currentShot=0;}
-else{press("restart"); shots=[]; arrowColors={}; currentRound=1; currentShot=0;}
-}
-else if(currentShot>=maxArrows&&currentRound<numRounds){
-if(y>HEIGHT-150){press("next"); currentRound++; currentShot=0;}
-}
-else{
-clickPos={x,y};
-selectedNumber="";
-state="number";
-}
-}
-
-else if(state==="number"){
-if(y>HEIGHT-80){press("delNum"); selectedNumber=selectedNumber.slice(0,-1);}
-else if(y>HEIGHT-150){
-press("ready");
-if(!selectedNumber)return;
-
-if(shots.some(s=>s.round===currentRound&&s.num===selectedNumber))return;
-
-arrowColors[selectedNumber]=arrowColors[selectedNumber]||`hsl(${Math.random()*360},70%,60%)`;
-shots.push({x:clickPos.x,y:clickPos.y,num:selectedNumber,round:currentRound});
-currentShot++;
-
-if(currentShot>=maxArrows){
-if(currentRound>=numRounds)state="history";
-else state="game";
-}else state="game";
-
-selectedNumber="";
-}
-}
-
-else if(state==="history"){
-if(y>HEIGHT-70){
-let w=WIDTH/4-10;
-if(x<5+w){press("game"); state="game";}
-else if(x<10+2*w){press("prev"); histRound=Math.max(1,histRound-1);}
-else if(x<15+3*w){press("nextH"); histRound=Math.min(numRounds,histRound+1);}
-else{press("all"); state="all";}
-}
-}
-
-else if(state==="all"){
-if(y>HEIGHT-70){
-if(x<100){press("game"); state="game";}
-else{press("back"); state="history";}
-}
-}
-});
-
-canvas.addEventListener("mouseup",()=>pressedButton=null);
 
 // ---------- LOOP ----------
 function loop(){
@@ -367,8 +271,8 @@ center={x:WIDTH/2,y:HEIGHT/3};
 TARGET_RADIUS=Math.min(WIDTH,HEIGHT)/5*1.5;
 RED_RADIUS=TARGET_RADIUS*0.35;
 
-// 🔑 единые размеры клавиатуры
-KEY_SIZE=Math.min(80,WIDTH/8);
+// 🔑 увеличенные размеры клавиатуры на 20%
+KEY_SIZE=Math.min(80,WIDTH/8)*1.2;
 KEY_GAP=12;
 KEY_START_Y=HEIGHT*0.55;
 
