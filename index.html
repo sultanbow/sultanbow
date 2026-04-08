@@ -9,14 +9,14 @@ margin:0;
 padding:0;
 width:100%;
 height:100%;
-background:#ccc;
+background:linear-gradient(135deg,#eef2f7,#dfe6ee);
 display:flex;
 justify-content:center;
 align-items:center;
 overflow:hidden;
 font-family:Arial;
 }
-canvas{background:#f0f0f0;}
+canvas{background:transparent;}
 </style>
 </head>
 <body>
@@ -57,59 +57,72 @@ return 0;
 
 // ---------- BUTTON ----------
 function drawButton(x,y,w,h,text,color,id){
-let scale=1;
+let offsetY=0;
+
 if(pressTime[id]){
 let dt=Date.now()-pressTime[id];
-if(dt<120)scale=0.9;
-else if(dt<200)scale=1.05;
+if(dt<120) offsetY=4;
 else delete pressTime[id];
 }
 
-let cx=x+w/2,cy=y+h/2;
-
 ctx.save();
-ctx.translate(cx,cy);
-ctx.scale(scale,scale);
+ctx.translate(x,y+offsetY);
 
-ctx.fillStyle=pressedButton===id?"#444":color;
+ctx.fillStyle="rgba(0,0,0,0.15)";
 ctx.beginPath();
-ctx.roundRect(-w/2,-h/2,w,h,15);
+ctx.roundRect(0,5,w,h,20);
+ctx.fill();
+
+ctx.fillStyle=pressedButton===id?"#2c3e50":color;
+ctx.beginPath();
+ctx.roundRect(0,0,w,h,20);
 ctx.fill();
 
 ctx.fillStyle="white";
-ctx.font=`${Math.floor(h/2)}px Arial`;
+ctx.font=`${Math.floor(h/2.5)}px Arial`;
 ctx.textAlign="center";
 ctx.textBaseline="middle";
-ctx.fillText(text,0,0);
+ctx.fillText(text,w/2,h/2);
 
 ctx.restore();
 }
 
 // ---------- TARGET ----------
 function drawTarget(){
-ctx.beginPath();
-ctx.arc(center.x,center.y,TARGET_RADIUS,0,Math.PI*2);
-ctx.fillStyle="white";
-ctx.fill();
-ctx.stroke();
+ctx.shadowColor="rgba(0,0,0,0.2)";
+ctx.shadowBlur=20;
 
 ctx.beginPath();
-// красный круг уменьшен на 10%
-ctx.arc(center.x,center.y,RED_RADIUS*0.9,0,Math.PI*2);
-ctx.fillStyle="red";
+ctx.arc(center.x,center.y,TARGET_RADIUS,0,Math.PI*2);
+ctx.fillStyle="#ffffff";
 ctx.fill();
+
+ctx.beginPath();
+ctx.arc(center.x,center.y,RED_RADIUS*0.9,0,Math.PI*2);
+ctx.fillStyle="#e74c3c";
+ctx.fill();
+
+ctx.shadowBlur=0;
 }
 
 // ---------- KEYPAD ----------
 function drawKeypad(startY,scaleFactor=1){
 let size=Math.min(80,WIDTH/8)*scaleFactor;
-let startX=WIDTH/2-(5*(size+10))/2;
-let colors=["#e74c3c","#f39c12","#2ecc71","#3498db","#9b59b6","#1abc9c","#e67e22","#8e44ad","#34495e","#f1c40f"];
+let gap=12;
+let startX=WIDTH/2-(5*(size+gap))/2;
 
 for(let i=0;i<10;i++){
-let x=startX+(i%5)*(size+10);
-let y=startY+Math.floor(i/5)*(size+10);
-drawButton(x,y,size,size,i,colors[i],"key"+i);
+let x=startX+(i%5)*(size+gap);
+let y=startY+Math.floor(i/5)*(size+gap);
+
+let isActive = selectedNumber.endsWith(i.toString());
+
+drawButton(
+x,y,size,size,
+i,
+isActive ? "#4CAF50" : "#34495e",
+"key"+i
+);
 }
 }
 
@@ -120,6 +133,7 @@ ctx.fillStyle=arrowColors[s.num];
 ctx.beginPath();
 ctx.arc(s.x,s.y,Math.max(6,WIDTH/50),0,Math.PI*2);
 ctx.fill();
+
 ctx.fillStyle="black";
 ctx.font="14px Arial";
 ctx.textAlign="center";
@@ -127,31 +141,37 @@ ctx.fillText(s.num,s.x,s.y+3);
 });
 }
 
-// ---------- INPUT ----------
+// ---------- INPUT (ИСПРАВЛЕНО) ----------
 function drawInput(){
-ctx.fillStyle="black";
-ctx.font="32px Arial";
-ctx.fillText("Rounds:",WIDTH*0.1,HEIGHT*0.25);
-ctx.fillText("Arrows:",WIDTH*0.1,HEIGHT*0.35);
+ctx.fillStyle="#2c3e50";
+ctx.font="28px Arial";
 
-ctx.strokeStyle=activeInput==="rounds"?"green":"black";
-ctx.strokeRect(WIDTH*0.4,HEIGHT*0.22,WIDTH*0.3,50);
+let inputX = WIDTH*0.4;
 
-ctx.strokeStyle=activeInput==="arrows"?"green":"black";
-ctx.strokeRect(WIDTH*0.4,HEIGHT*0.32,WIDTH*0.3,50);
-
-// центрированный текст
-ctx.textAlign="left";
+// выравнивание текста справа
+ctx.textAlign="right";
 ctx.textBaseline="middle";
-ctx.fillText(inputRounds,WIDTH*0.45,HEIGHT*0.22+25);
-ctx.fillText(inputArrows,WIDTH*0.45,HEIGHT*0.32+25);
 
-// клавиатура по центру
-drawKeypad(HEIGHT*0.45,1.2);
+ctx.fillText("Rounds:",inputX-20,HEIGHT*0.22+25);
+ctx.fillText("Arrows:",inputX-20,HEIGHT*0.32+25);
 
-// увеличенные кнопки DEL и START
-drawButton(WIDTH*0.15,HEIGHT-110,180,70,"DEL","#e74c3c","del");
-drawButton(WIDTH*0.55,HEIGHT-110,200,70,"START","#2ecc71","start");
+// рамки
+ctx.strokeStyle=activeInput==="rounds"?"#4CAF50":"#999";
+ctx.lineWidth=2;
+ctx.strokeRect(inputX,HEIGHT*0.22,WIDTH*0.3,50);
+
+ctx.strokeStyle=activeInput==="arrows"?"#4CAF50":"#999";
+ctx.strokeRect(inputX,HEIGHT*0.32,WIDTH*0.3,50);
+
+// текст внутри
+ctx.textAlign="left";
+ctx.fillText(inputRounds,inputX+10,HEIGHT*0.22+25);
+ctx.fillText(inputArrows,inputX+10,HEIGHT*0.32+25);
+
+drawKeypad(HEIGHT*0.45,1.1);
+
+drawButton(WIDTH*0.15,HEIGHT-110,160,60,"DEL","#e74c3c","del");
+drawButton(WIDTH*0.55,HEIGHT-110,180,60,"START","#2ecc71","start");
 }
 
 // ---------- GAME ----------
@@ -162,21 +182,20 @@ drawArrows(shots.filter(s=>s.round===currentRound));
 let rs=shots.filter(s=>s.round===currentRound).reduce((a,s)=>a+getScore(s.x,s.y),0);
 let ts=shots.reduce((a,s)=>a+getScore(s.x,s.y),0);
 
-ctx.fillStyle="black";
+ctx.fillStyle="#2c3e50";
 ctx.font="20px Arial";
-ctx.fillText(`Round ${currentRound}/${numRounds}`,WIDTH-200,30);
-ctx.fillText(`Arrow ${currentShot}/${maxArrows}`,WIDTH-200,60);
-ctx.fillText(`Round Score ${rs}`,WIDTH-200,90);
-ctx.fillText(`Total ${ts}`,WIDTH-200,120);
+ctx.fillText(`Round ${currentRound}/${numRounds}`,WIDTH-220,40);
+ctx.fillText(`Arrow ${currentShot}/${maxArrows}`,WIDTH-220,70);
+ctx.fillText(`Round Score ${rs}`,WIDTH-220,100);
+ctx.fillText(`Total ${ts}`,WIDTH-220,130);
 
-// кнопки Hist, Reset, Restart
-let w=WIDTH/3-5;
-drawButton(5,HEIGHT-60,w,60,"Hist","#3498db","hist");
-drawButton(5+w+5,HEIGHT-60,w,60,"Reset","#f39c12","reset");
-drawButton(5+2*(w+5),HEIGHT-60,w,60,"Restart","#e74c3c","restart");
+let w=WIDTH/3-10;
+drawButton(5,HEIGHT-70,w,60,"Hist","#3498db","hist");
+drawButton(10+w,HEIGHT-70,w,60,"Reset","#f39c12","reset");
+drawButton(15+2*w,HEIGHT-70,w,60,"Restart","#e74c3c","restart");
 
 if(currentShot>=maxArrows&&currentRound<numRounds){
-drawButton(WIDTH/2-100,HEIGHT-140,200,60,"Next","#27ae60","next");
+drawButton(WIDTH/2-100,HEIGHT-150,200,60,"Next","#27ae60","next");
 }
 }
 
@@ -185,15 +204,13 @@ function drawNumber(){
 drawTarget();
 drawArrows(shots.filter(s=>s.round===currentRound));
 
-// если номер выбран
 if(selectedNumber){
-ctx.fillStyle="black";
-ctx.font="22px Arial";
+ctx.fillStyle="#2c3e50";
+ctx.font="24px Arial";
 ctx.fillText(selectedNumber,clickPos.x,clickPos.y-20);
 }
 
-// клавиатура теперь **выше**, между мишенью и нижними кнопками, увеличенная
-drawKeypad(HEIGHT*0.55,1.5);
+drawKeypad(HEIGHT*0.55,1.3);
 
 drawButton(WIDTH/2-120,HEIGHT-150,240,60,"READY","#2ecc71","ready");
 drawButton(WIDTH/2-120,HEIGHT-80,240,60,"DEL","#e74c3c","delNum");
@@ -208,10 +225,10 @@ let rs=shots.filter(s=>s.round===histRound).reduce((a,s)=>a+getScore(s.x,s.y),0)
 ctx.fillText(`Round ${histRound} Score ${rs}`,50,40);
 
 let w=WIDTH/4-10;
-drawButton(5,HEIGHT-60,w,60,"Game","#2ecc71","game");
-drawButton(5+w+5,HEIGHT-60,w,60,"Prev","#3498db","prev");
-drawButton(5+2*(w+5),HEIGHT-60,w,60,"Next","#3498db","nextH");
-drawButton(5+3*(w+5),HEIGHT-60,w,60,"All","#9b59b6","all");
+drawButton(5,HEIGHT-70,w,60,"Game","#2ecc71","game");
+drawButton(10+w,HEIGHT-70,w,60,"Prev","#3498db","prev");
+drawButton(15+2*w,HEIGHT-70,w,60,"Next","#3498db","nextH");
+drawButton(20+3*w,HEIGHT-70,w,60,"All","#9b59b6","all");
 }
 
 // ---------- ALL ----------
@@ -222,8 +239,8 @@ drawArrows(shots);
 let ts=shots.reduce((a,s)=>a+getScore(s.x,s.y),0);
 ctx.fillText(`Total ${ts}`,10,30);
 
-drawButton(10,HEIGHT-60,100,60,"Game","#2ecc71","game");
-drawButton(120,HEIGHT-60,120,60,"Back","#3498db","back");
+drawButton(10,HEIGHT-70,100,60,"Game","#2ecc71","game");
+drawButton(120,HEIGHT-70,120,60,"Back","#3498db","back");
 }
 
 // ---------- CLICK ----------
@@ -251,13 +268,14 @@ if(numRounds&&maxArrows)state="game";
 }
 }
 
-let size=Math.min(80,WIDTH/8)*1.2;
-let startX=WIDTH/2-(5*(size+10))/2;
+let size=Math.min(80,WIDTH/8)*1.1;
+let gap=12;
+let startX=WIDTH/2-(5*(size+gap))/2;
 let startY=HEIGHT*0.45;
 
 if(y>startY&&y<startY+size*2){
-let col=Math.floor((x-startX)/(size+10));
-let row=Math.floor((y-startY)/(size+10));
+let col=Math.floor((x-startX)/(size+gap));
+let row=Math.floor((y-startY)/(size+gap));
 let n=row*5+col;
 if(n>=0&&n<=9){
 press("key"+n);
@@ -268,14 +286,14 @@ else inputArrows+=n;
 }
 
 else if(state==="game"){
-if(y>HEIGHT-60){
-let w=WIDTH/3-5;
+if(y>HEIGHT-70){
+let w=WIDTH/3-10;
 if(x<5+w){press("hist"); state="history"; histRound=currentRound;}
-else if(x<5+2*(w+5)){press("reset"); shots=shots.filter(s=>s.round!==currentRound); currentShot=0;}
+else if(x<10+2*w){press("reset"); shots=shots.filter(s=>s.round!==currentRound); currentShot=0;}
 else{press("restart"); shots=[]; arrowColors={}; currentRound=1; currentShot=0;}
 }
 else if(currentShot>=maxArrows&&currentRound<numRounds){
-if(y>HEIGHT-140){press("next"); currentRound++; currentShot=0;}
+if(y>HEIGHT-150){press("next"); currentRound++; currentShot=0;}
 }
 else{
 clickPos={x,y};
@@ -290,15 +308,12 @@ else if(y>HEIGHT-150){
 press("ready");
 if(!selectedNumber)return;
 
-// 🚫 запрещаем выбрать тот же номер стрелы в текущем раунде
 if(shots.some(s=>s.round===currentRound&&s.num===selectedNumber))return;
 
-// добавляем стрелу
-arrowColors[selectedNumber]=arrowColors[selectedNumber]||`rgb(${Math.random()*255},${Math.random()*255},${Math.random()*255})`;
+arrowColors[selectedNumber]=arrowColors[selectedNumber]||`hsl(${Math.random()*360},70%,60%)`;
 shots.push({x:clickPos.x,y:clickPos.y,num:selectedNumber,round:currentRound});
 currentShot++;
 
-// ✅ завершение игры после последней стрелы
 if(currentShot>=maxArrows){
 if(currentRound>=numRounds)state="history";
 else state="game";
@@ -306,13 +321,14 @@ else state="game";
 selectedNumber="";
 }
 
-let size=Math.min(70,WIDTH/8)*1.5;
-let startX=WIDTH/2-(5*(size+10))/2;
+let size=Math.min(80,WIDTH/8)*1.3;
+let gap=12;
+let startX=WIDTH/2-(5*(size+gap))/2;
 let startY=HEIGHT*0.55;
 
 if(y>startY&&y<startY+size*2){
-let col=Math.floor((x-startX)/(size+10));
-let row=Math.floor((y-startY)/(size+10));
+let col=Math.floor((x-startX)/(size+gap));
+let row=Math.floor((y-startY)/(size+gap));
 let n=row*5+col;
 if(n>=0&&n<=9){
 press("key"+n);
@@ -322,17 +338,17 @@ selectedNumber+=n;
 }
 
 else if(state==="history"){
-if(y>HEIGHT-60){
+if(y>HEIGHT-70){
 let w=WIDTH/4-10;
 if(x<5+w){press("game"); state="game";}
-else if(x<5+2*(w+5)){press("prev"); histRound=Math.max(1,histRound-1);}
-else if(x<5+3*(w+5)){press("nextH"); histRound=Math.min(numRounds,histRound+1);}
+else if(x<10+2*w){press("prev"); histRound=Math.max(1,histRound-1);}
+else if(x<15+3*w){press("nextH"); histRound=Math.min(numRounds,histRound+1);}
 else{press("all"); state="all";}
 }
 }
 
 else if(state==="all"){
-if(y>HEIGHT-60){
+if(y>HEIGHT-70){
 if(x<100){press("game"); state="game";}
 else{press("back"); state="history";}
 }
