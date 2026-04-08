@@ -61,7 +61,6 @@ return 0;
 // ---------- BUTTON ----------
 function drawButton(x,y,w,h,text,color,id){
 let offsetY=0;
-
 if(pressTime[id]){
 let dt=Date.now()-pressTime[id];
 if(dt<120) offsetY=4;
@@ -110,6 +109,7 @@ ctx.shadowBlur=0;
 
 // ---------- KEYPAD ----------
 function drawKeypad(){
+if(state==="history") return; // клавиатура скрыта на истории
 let startX=WIDTH/2-(5*(KEY_SIZE+KEY_GAP))/2;
 
 for(let i=0;i<10;i++){
@@ -129,6 +129,7 @@ active?"#4CAF50":"#34495e",
 
 // ---------- KEYPAD CLICK ----------
 function handleKeypadClick(x,y){
+if(state==="history") return null; // клавиатура не активна на истории
 let startX=WIDTH/2-(5*(KEY_SIZE+KEY_GAP))/2;
 
 if(y>=KEY_START_Y && y<=KEY_START_Y+KEY_SIZE*2+KEY_GAP){
@@ -184,9 +185,9 @@ ctx.fillText(inputArrows,inputX+10,HEIGHT*0.32+25);
 
 drawKeypad();
 
-// нижние кнопки
-drawButton(WIDTH*0.15,HEIGHT-125,200,80,"DEL","#e74c3c","del");
-drawButton(WIDTH*0.55,HEIGHT-125,220,80,"START","#2ecc71","start");
+// нижние кнопки увеличены на 20%
+drawButton(WIDTH*0.15,HEIGHT-150,240,96,"DEL","#e74c3c","del");
+drawButton(WIDTH*0.55,HEIGHT-150,264,96,"START","#2ecc71","start");
 }
 
 // ---------- GAME ----------
@@ -205,12 +206,12 @@ ctx.fillText(`Round Score ${rs}`,WIDTH-220,100);
 ctx.fillText(`Total ${ts}`,WIDTH-220,130);
 
 let w=WIDTH/3-10;
-drawButton(5,HEIGHT-90,w,80,"Hist","#3498db","hist");
-drawButton(10+w,HEIGHT-90,w,80,"Reset","#f39c12","reset");
-drawButton(15+2*w,HEIGHT-90,w,80,"Restart","#e74c3c","restart");
+drawButton(5,HEIGHT-108,w*1.2,96,"Hist","#3498db","hist");
+drawButton(10+w,HEIGHT-108,w*1.2,96,"Reset","#f39c12","reset");
+drawButton(15+2*w,HEIGHT-108,w*1.2,96,"Restart","#e74c3c","restart");
 
 if(currentShot>=maxArrows&&currentRound<numRounds){
-drawButton(WIDTH/2-115,HEIGHT-180,230,80,"Next","#27ae60","next");
+drawButton(WIDTH/2-138,HEIGHT-192,276,96,"Next","#27ae60","next");
 }
 }
 
@@ -227,8 +228,8 @@ ctx.fillText(selectedNumber,clickPos.x,clickPos.y-20);
 
 drawKeypad();
 
-drawButton(WIDTH/2-145,HEIGHT-180,290,80,"READY","#2ecc71","ready");
-drawButton(WIDTH/2-145,HEIGHT-95,290,80,"DEL","#e74c3c","delNum");
+drawButton(WIDTH/2-174,HEIGHT-192,348,96,"READY","#2ecc71","ready");
+drawButton(WIDTH/2-174,HEIGHT-108,348,96,"DEL","#e74c3c","delNum");
 }
 
 // ---------- HISTORY ----------
@@ -238,13 +239,12 @@ drawArrows(shots.filter(s=>s.round===histRound));
 
 ctx.fillText(`Round ${histRound}`,50,40);
 
-drawKeypad();
-
+// клавиатура не рисуется
 let w=WIDTH/4-10;
-drawButton(5,HEIGHT-90,w,80,"Game","#2ecc71","game");
-drawButton(10+w,HEIGHT-90,w,80,"Prev","#3498db","prev");
-drawButton(15+2*w,HEIGHT-90,w,80,"Next","#3498db","nextH");
-drawButton(20+3*w,HEIGHT-90,w,80,"All","#9b59b6","all");
+drawButton(5,HEIGHT-108,w*1.2,96,"Game","#2ecc71","game");
+drawButton(10+w,HEIGHT-108,w*1.2,96,"Prev","#3498db","prev");
+drawButton(15+2*w,HEIGHT-108,w*1.2,96,"Next","#3498db","nextH");
+drawButton(20+3*w,HEIGHT-108,w*1.2,96,"All","#9b59b6","all");
 }
 
 // ---------- ALL ----------
@@ -256,8 +256,8 @@ ctx.fillText("All shots",20,30);
 
 drawKeypad();
 
-drawButton(10,HEIGHT-90,130,80,"Game","#2ecc71","game");
-drawButton(150,HEIGHT-90,150,80,"Back","#3498db","back");
+drawButton(10,HEIGHT-108,156,96,"Game","#2ecc71","game");
+drawButton(166,HEIGHT-108,180,96,"Back","#3498db","back");
 }
 
 // ---------- CLICK ----------
@@ -285,7 +285,7 @@ if(state==="input"){
 if(y>HEIGHT*0.22&&y<HEIGHT*0.28)activeInput="rounds";
 if(y>HEIGHT*0.32&&y<HEIGHT*0.38)activeInput="arrows";
 
-if(y>HEIGHT-125){
+if(y>HEIGHT-150){
 if(x<WIDTH/2){
 press("del");
 if(activeInput==="rounds")inputRounds=inputRounds.slice(0,-1);
@@ -300,14 +300,14 @@ if(numRounds&&maxArrows)state="game";
 }
 
 else if(state==="game"){
-if(y>HEIGHT-90){
+if(y>HEIGHT-108){
 let w=WIDTH/3-10;
 if(x<5+w){press("hist"); state="history"; histRound=currentRound;}
 else if(x<10+2*w){press("reset"); shots=shots.filter(s=>s.round!==currentRound); currentShot=0;}
 else{press("restart"); shots=[]; arrowColors={}; currentRound=1; currentShot=0;}
 }
 else if(currentShot>=maxArrows&&currentRound<numRounds){
-if(y>HEIGHT-180){press("next"); currentRound++; currentShot=0;}
+if(y>HEIGHT-192){press("next"); currentRound++; currentShot=0;}
 }
 else{
 clickPos={x,y};
@@ -317,8 +317,8 @@ state="number";
 }
 
 else if(state==="number"){
-if(y>HEIGHT-95){press("delNum"); selectedNumber=selectedNumber.slice(0,-1);}
-else if(y>HEIGHT-180){
+if(y>HEIGHT-108){press("delNum"); selectedNumber=selectedNumber.slice(0,-1);}
+else if(y>HEIGHT-192){
 press("ready");
 if(!selectedNumber)return;
 
@@ -338,7 +338,7 @@ selectedNumber="";
 }
 
 else if(state==="history"){
-if(y>HEIGHT-90){
+if(y>HEIGHT-108){
 let w=WIDTH/4-10;
 if(x<5+w){press("game"); state="game";}
 else if(x<10+2*w){press("prev"); histRound=Math.max(1,histRound-1);}
@@ -348,8 +348,8 @@ else{press("all"); state="all";}
 }
 
 else if(state==="all"){
-if(y>HEIGHT-90){
-if(x<130){press("game"); state="game";}
+if(y>HEIGHT-108){
+if(x<156){press("game"); state="game";}
 else{press("back"); state="history";}
 }
 }
@@ -368,8 +368,8 @@ center={x:WIDTH/2,y:HEIGHT/3};
 TARGET_RADIUS=Math.min(WIDTH,HEIGHT)/5*1.5;
 RED_RADIUS=TARGET_RADIUS*0.35;
 
-// 🔑 увеличенные размеры клавиатуры на 25%
-KEY_SIZE=Math.min(80,WIDTH/8)*1.25;
+// 🔑 клавиатура увеличена суммарно на 56% от исходного
+KEY_SIZE=Math.min(80,WIDTH/8)*1.56;
 KEY_GAP=12;
 KEY_START_Y=HEIGHT*0.55;
 
