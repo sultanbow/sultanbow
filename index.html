@@ -72,7 +72,7 @@ bgImage.onload = () => { bgLoaded = true; }
 function drawInputWithBackground(){
     if(bgLoaded){
         ctx.save();
-        ctx.globalAlpha = 0.5;
+        ctx.globalAlpha = 0.25; // Уменьшил прозрачность до 25%
         ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
         ctx.restore();
     } else {
@@ -80,16 +80,20 @@ function drawInputWithBackground(){
         ctx.fillRect(0,0,canvas.width,canvas.height);
     }
     ctx.fillStyle="#2c3e50";
-    ctx.font=`${28*1.3}px Arial`;
-    let inputX=WIDTH*0.4;
+    ctx.font=`${32*1.3}px Arial`; // Увеличил шрифт
+    let inputX=WIDTH*0.35; // Сдвинул левее для компактности
+    
     ctx.textAlign="right";
     ctx.textBaseline="middle";
     ctx.fillText("Rounds:",inputX-20,HEIGHT*0.22+25);
     ctx.fillText("Arrows:",inputX-20,HEIGHT*0.32+25);
+    
     ctx.strokeStyle=activeInput==="rounds"?"#4CAF50":"#999";
-    ctx.strokeRect(inputX,HEIGHT*0.22,WIDTH*0.3,50);
+    ctx.strokeRect(inputX,HEIGHT*0.22,WIDTH*0.25,50); // Уменьшил ширину
+    
     ctx.strokeStyle=activeInput==="arrows"?"#4CAF50":"#999";
-    ctx.strokeRect(inputX,HEIGHT*0.32,WIDTH*0.3,50);
+    ctx.strokeRect(inputX,HEIGHT*0.32,WIDTH*0.25,50);
+    
     ctx.textAlign="left";
     ctx.fillText(inputRounds,inputX+10,HEIGHT*0.22+25);
     ctx.fillText(inputArrows,inputX+10,HEIGHT*0.32+25);
@@ -111,18 +115,16 @@ function getScore(x,y){
     return 0;
 }
 
-function updateAccuracyStats(arrowNum, score, x, y) {
+function updateAccuracyStats(arrowNum, x, y) {
     if(!accuracyStats[arrowNum]) {
         accuracyStats[arrowNum] = { 
-            total:0, center:0, hits:0, 
-            sumX:0, sumY:0  // сумма координат для вычисления среднего
+            total:0,
+            sumX:0, sumY:0
         };
     }
     accuracyStats[arrowNum].total++;
     accuracyStats[arrowNum].sumX += x;
     accuracyStats[arrowNum].sumY += y;
-    if(score===2) accuracyStats[arrowNum].center++;
-    if(score>0) accuracyStats[arrowNum].hits++;
 }
 
 function getAveragePosition(arrowNum) {
@@ -131,51 +133,6 @@ function getAveragePosition(arrowNum) {
         x: accuracyStats[arrowNum].sumX / accuracyStats[arrowNum].total,
         y: accuracyStats[arrowNum].sumY / accuracyStats[arrowNum].total
     };
-}
-
-function getAccuracyPercentage(arrowNum) {
-    if(!accuracyStats[arrowNum] || accuracyStats[arrowNum].total===0) return 0;
-    return (accuracyStats[arrowNum].center / accuracyStats[arrowNum].total * 100).toFixed(1);
-}
-
-function getOverallAccuracy() {
-    let totalShots=0, totalCenters=0;
-    for(let num in accuracyStats){
-        totalShots+=accuracyStats[num].total;
-        totalCenters+=accuracyStats[num].center;
-    }
-    if(totalShots===0) return 0;
-    return (totalCenters/totalShots*100).toFixed(1);
-}
-
-function getMostAccurateNumber() {
-    let bestNum=null, bestPerc=-1;
-    for(let num in accuracyStats){
-        let perc=getAccuracyPercentage(num);
-        if(perc>bestPerc && accuracyStats[num].total>=2){bestPerc=perc; bestNum=num;}
-    }
-    if(bestNum===null){
-        for(let num in accuracyStats){
-            let perc=getAccuracyPercentage(num);
-            if(perc>bestPerc){bestPerc=perc; bestNum=num;}
-        }
-    }
-    return {num:bestNum, accuracy:bestPerc};
-}
-
-function getNumbersByAccuracy() {
-    let numbers=[];
-    for(let num in accuracyStats){
-        numbers.push({
-            num:num,
-            accuracy:getAccuracyPercentage(num),
-            total:accuracyStats[num].total,
-            center:accuracyStats[num].center,
-            hits:accuracyStats[num].hits
-        });
-    }
-    numbers.sort((a,b)=>b.accuracy-a.accuracy);
-    return numbers;
 }
 
 function drawButton(x,y,w,h,text,color,id){
@@ -258,32 +215,6 @@ function drawArrows(arr){
     });
 }
 
-function drawStatsPanel(x, y, width, title){
-    let lineH = 25;
-    ctx.fillStyle = "rgba(0,0,0,0.75)";
-    ctx.fillRect(x-10, y-30, width, 180);
-    ctx.fillStyle = "#fff";
-    ctx.font = `bold ${16*1.3}px Arial`;
-    ctx.fillText(title, x, y);
-    ctx.font = `${14*1.3}px Arial`;
-    ctx.fillStyle = "#FFD700";
-    ctx.fillText(`Overall accuracy: ${getOverallAccuracy()}%`, x, y+lineH);
-    let most = getMostAccurateNumber();
-    if(most.num){
-        ctx.fillStyle = "#00FF00";
-        ctx.fillText(`🎯 Best: #${most.num} (${most.accuracy}%)`, x, y+lineH*2);
-    }
-    ctx.fillStyle = "#87CEEB";
-    ctx.fillText("Accuracy ranking:", x, y+lineH*3);
-    let ranking = getNumbersByAccuracy();
-    for(let i=0; i<Math.min(5, ranking.length); i++){
-        let item = ranking[i];
-        let medal = i===0?"🥇":(i===1?"🥈":(i===2?"🥉":`${i+1}.`));
-        ctx.fillStyle = i===0?"#FFD700":(i===1?"#C0C0C0":(i===2?"#CD7F32":"#fff"));
-        ctx.fillText(`${medal} #${item.num}: ${item.accuracy}% (${item.center}/${item.total})`, x, y+lineH*4+i*lineH);
-    }
-}
-
 function drawGame(){
     drawTarget();
     drawArrows(shots.filter(s=>s.round===currentRound));
@@ -296,7 +227,7 @@ function drawGame(){
     ctx.fillText(`Arrow ${currentShot}/${maxArrows}`,WIDTH-280,70);
     ctx.fillText(`Round Score ${rs}`,WIDTH-280,100);
     ctx.fillText(`Total ${ts}`,WIDTH-280,130);
-    drawStatsPanel(20, HEIGHT-200, 300, "📊 STATISTICS");
+    
     let bottomHeight = 96*1.2;
     let bottomY = HEIGHT-bottomHeight-10;
     let gap = 20;
@@ -327,6 +258,17 @@ function drawNumber(){
     let btnW = (WIDTH-(btnCount+1)*gap)/btnCount;
     drawButton(gap,bottomY,btnW,bottomHeight,"DEL","#e74c3c","delNum");
     drawButton(2*gap+btnW,bottomY,btnW,bottomHeight,"READY","#2ecc71","ready");
+    
+    // Статистика в режиме номера (поднята выше и черным цветом)
+    let rs=shots.filter(s=>s.round===currentRound).reduce((a,s)=>a+getScore(s.x,s.y),0);
+    let ts=shots.reduce((a,s)=>a+getScore(s.x,s.y),0);
+    ctx.fillStyle="#000000";
+    ctx.font=`${18*1.3}px Arial`;
+    ctx.textAlign="left";
+    ctx.fillText(`Round ${currentRound}/${numRounds}`,20,HEIGHT-150);
+    ctx.fillText(`Arrow ${currentShot}/${maxArrows}`,20,HEIGHT-125);
+    ctx.fillText(`Round Score ${rs}`,20,HEIGHT-100);
+    ctx.fillText(`Total ${ts}`,20,HEIGHT-75);
 }
 
 function drawHistory(){
@@ -335,7 +277,7 @@ function drawHistory(){
     ctx.fillStyle="#2c3e50";
     ctx.font=`${20*1.3}px Arial`;
     ctx.fillText(`Round ${histRound}`,50,40);
-    drawStatsPanel(20, HEIGHT-200, 300, "📊 STATISTICS");
+    
     let bottomHeight = 96*1.2;
     let bottomY = HEIGHT-bottomHeight-10;
     let gap = 20;
@@ -354,7 +296,7 @@ function drawAll(){
     ctx.fillStyle="#2c3e50";
     ctx.font=`${20*1.3}px Arial`;
     ctx.fillText("All shots",20,30);
-    drawStatsPanel(20, HEIGHT-200, 300, "📊 STATISTICS");
+    
     let bottomHeight = 96*1.2;
     let bottomY = HEIGHT-bottomHeight-10;
     let gap = 20;
@@ -364,76 +306,45 @@ function drawAll(){
     drawButton(2*gap+btnW,bottomY,btnW,bottomHeight,"Back","#3498db","back");
 }
 
-// НОВЫЙ РЕЖИМ: АНАЛИЗ СРЕДНИХ ПОЗИЦИЙ
 function drawAnalysis(){
     drawTarget();
     
-    // Рисуем средние точки для каждой стрелы (по одному кружку на номер)
     for(let num in accuracyStats) {
         let avgPos = getAveragePosition(num);
-        if(avgPos) {
-            // Рисуем среднюю точку большего размера с обводкой
+        if(avgPos && accuracyStats[num].total > 0) {
             ctx.fillStyle = getColorForNumber(num);
             ctx.beginPath();
-            ctx.arc(avgPos.x, avgPos.y, Math.max(10, WIDTH/35), 0, Math.PI*2);
+            ctx.arc(avgPos.x, avgPos.y, Math.max(12, WIDTH/30), 0, Math.PI*2);
             ctx.fill();
             ctx.strokeStyle = "white";
             ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.arc(avgPos.x, avgPos.y, Math.max(10, WIDTH/35), 0, Math.PI*2);
+            ctx.arc(avgPos.x, avgPos.y, Math.max(12, WIDTH/30), 0, Math.PI*2);
             ctx.stroke();
-            // Рисуем номер стрелы
             ctx.fillStyle = "white";
-            ctx.font = `bold ${16*1.3}px Arial`;
+            ctx.font = `bold ${18*1.3}px Arial`;
             ctx.textAlign = "center";
-            ctx.fillText(num, avgPos.x, avgPos.y + 4);
+            ctx.fillText(num, avgPos.x, avgPos.y + 5);
             
-            // Рисуем линию от центра мишени к средней точке (вектор смещения)
             ctx.beginPath();
             ctx.moveTo(center.x, center.y);
             ctx.lineTo(avgPos.x, avgPos.y);
-            ctx.strokeStyle = "rgba(255,255,255,0.5)";
+            ctx.strokeStyle = "rgba(255,255,255,0.4)";
             ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
             ctx.stroke();
+            ctx.setLineDash([]);
         }
     }
     
     ctx.fillStyle="#2c3e50";
-    ctx.font=`${20*1.3}px Arial`;
-    ctx.fillText("📈 AVERAGE POSITION ANALYSIS",20,40);
+    ctx.font=`${22*1.3}px Arial`;
+    ctx.fillText("📈 AVERAGE POSITION ANALYSIS",20,45);
     ctx.font=`${14*1.3}px Arial`;
-    ctx.fillStyle="#fff";
-    ctx.fillText("Each circle = average landing point for that number",20,70);
-    ctx.fillStyle="#FFD700";
-    ctx.fillText("Lines show deviation from center",20,95);
-    
-    // Таблица с данными о средних позициях
-    let startX = 20;
-    let startY = 130;
-    let lineH = 22;
-    let tableHeight = 35 + (Object.keys(accuracyStats).length + 1) * lineH;
-    ctx.fillStyle = "rgba(0,0,0,0.7)";
-    ctx.fillRect(startX-5, startY-20, 400, tableHeight);
-    ctx.fillStyle = "#fff";
-    ctx.font = `bold ${15*1.3}px Arial`;
-    ctx.fillText("Average position by number:", startX, startY);
-    ctx.font = `${12*1.3}px Arial`;
-    ctx.fillStyle = "#FFD700";
-    ctx.fillText("Num | Shots | Avg X | Avg Y | Offset from center", startX, startY+lineH);
-    
-    let yOff = startY+lineH*2;
-    let numbers = getNumbersByAccuracy();
-    for(let item of numbers) {
-        let avgPos = getAveragePosition(item.num);
-        if(avgPos) {
-            let offsetX = (avgPos.x - center.x).toFixed(0);
-            let offsetY = (avgPos.y - center.y).toFixed(0);
-            let offsetDist = Math.sqrt(Math.pow(avgPos.x - center.x, 2) + Math.pow(avgPos.y - center.y, 2)).toFixed(0);
-            ctx.fillStyle = "#ffffff";
-            ctx.fillText(`${item.num.padEnd(4)} | ${item.total.toString().padEnd(6)} | ${avgPos.x.toFixed(0).padEnd(7)} | ${avgPos.y.toFixed(0).padEnd(7)} | Δ${offsetDist}px (${offsetX},${offsetY})`, startX, yOff);
-            yOff += lineH;
-        }
-    }
+    ctx.fillStyle="rgba(0,0,0,0.6)";
+    ctx.fillText("Each large circle = average landing point for that number",20,80);
+    ctx.fillStyle="rgba(0,0,0,0.6)";
+    ctx.fillText("Dashed line shows deviation from center",20,105);
     
     let bottomHeight = 96*1.2;
     let bottomY = HEIGHT-bottomHeight-10;
@@ -502,7 +413,7 @@ canvas.addEventListener("mousedown",e=>{
                 if(!selectedNumber) return;
                 if(shots.some(s=>s.round===currentRound&&s.num===selectedNumber)) return;
                 let score=getScore(clickPos.x, clickPos.y);
-                updateAccuracyStats(selectedNumber, score, clickPos.x, clickPos.y);
+                updateAccuracyStats(selectedNumber, clickPos.x, clickPos.y);
                 shots.push({x:clickPos.x, y:clickPos.y, num:selectedNumber, round:currentRound});
                 currentShot++;
                 if(currentShot>=maxArrows){
@@ -564,8 +475,8 @@ function loop(){
     center={x:WIDTH/2, y:HEIGHT/3};
     TARGET_RADIUS=Math.min(WIDTH,HEIGHT)/5*1.5;
     RED_RADIUS=TARGET_RADIUS*0.35;
-    KEY_SIZE=Math.min(80,WIDTH/8)*1.25;
-    KEY_GAP=12;
+    KEY_SIZE=Math.min(120,WIDTH/6)*1.5; // Увеличил размер клавиатуры на 50%
+    KEY_GAP=18; // Увеличил промежуток между клавишами
     KEY_START_Y=HEIGHT*0.55;
     
     if(state==="input") drawInputWithBackground();
