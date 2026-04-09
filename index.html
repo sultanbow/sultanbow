@@ -2,30 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Qazaq mergeni - Точная стрельба</title>
-<!-- Логотип для установки на телефон -->
-<link rel="apple-touch-icon" sizes="180x180" href="https://i.pinimg.com/736x/6c/16/0d/6c160dbfbb76eccf4de9af4cf832043c.jpg">
-<link rel="icon" type="image/png" sizes="32x32" href="https://i.pinimg.com/736x/6c/16/0d/6c160dbfbb76eccf4de9af4cf832043c.jpg">
-<link rel="icon" type="image/png" sizes="16x16" href="https://i.pinimg.com/736x/6c/16/0d/6c160dbfbb76eccf4de9af4cf832043c.jpg">
-<link rel="manifest" href="data:application/manifest+json,{
-  \"name\": \"Qazaq mergeni\",
-  \"short_name\": \"Mergeni\",
-  \"start_url\": \".\",
-  \"display\": \"standalone\",
-  \"background_color\": \"#2c3e50\",
-  \"theme_color\": \"#2c3e50\",
-  \"icons\": [{
-    \"src\": \"https://i.pinimg.com/736x/6c/16/0d/6c160dbfbb76eccf4de9af4cf832043c.jpg\",
-    \"sizes\": \"736x1288\",
-    \"type\": \"image/jpeg\"
-  }]
-}">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Mergeni">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#2c3e50">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Qazaq mergeni - Анализ точности</title> 
 <style>
 html,body{
 margin:0;
@@ -95,7 +72,7 @@ bgImage.onload = () => { bgLoaded = true; }
 function drawInputWithBackground(){
     if(bgLoaded){
         ctx.save();
-        ctx.globalAlpha = 0.25;
+        ctx.globalAlpha = 0.5;
         ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
         ctx.restore();
     } else {
@@ -103,20 +80,16 @@ function drawInputWithBackground(){
         ctx.fillRect(0,0,canvas.width,canvas.height);
     }
     ctx.fillStyle="#2c3e50";
-    ctx.font=`${32*1.3}px Arial`;
-    let inputX=WIDTH*0.35;
-    
+    ctx.font=`${28*1.3}px Arial`;
+    let inputX=WIDTH*0.4;
     ctx.textAlign="right";
     ctx.textBaseline="middle";
     ctx.fillText("Rounds:",inputX-20,HEIGHT*0.22+25);
     ctx.fillText("Arrows:",inputX-20,HEIGHT*0.32+25);
-    
     ctx.strokeStyle=activeInput==="rounds"?"#4CAF50":"#999";
-    ctx.strokeRect(inputX,HEIGHT*0.22,WIDTH*0.25,50);
-    
+    ctx.strokeRect(inputX,HEIGHT*0.22,WIDTH*0.3,50);
     ctx.strokeStyle=activeInput==="arrows"?"#4CAF50":"#999";
-    ctx.strokeRect(inputX,HEIGHT*0.32,WIDTH*0.25,50);
-    
+    ctx.strokeRect(inputX,HEIGHT*0.32,WIDTH*0.3,50);
     ctx.textAlign="left";
     ctx.fillText(inputRounds,inputX+10,HEIGHT*0.22+25);
     ctx.fillText(inputArrows,inputX+10,HEIGHT*0.32+25);
@@ -281,16 +254,6 @@ function drawNumber(){
     let btnW = (WIDTH-(btnCount+1)*gap)/btnCount;
     drawButton(gap,bottomY,btnW,bottomHeight,"DEL","#e74c3c","delNum");
     drawButton(2*gap+btnW,bottomY,btnW,bottomHeight,"READY","#2ecc71","ready");
-    
-    let rs=shots.filter(s=>s.round===currentRound).reduce((a,s)=>a+getScore(s.x,s.y),0);
-    let ts=shots.reduce((a,s)=>a+getScore(s.x,s.y),0);
-    ctx.fillStyle="#000000";
-    ctx.font=`${18*1.3}px Arial`;
-    ctx.textAlign="left";
-    ctx.fillText(`Round ${currentRound}/${numRounds}`,20,HEIGHT-150);
-    ctx.fillText(`Arrow ${currentShot}/${maxArrows}`,20,HEIGHT-125);
-    ctx.fillText(`Round Score ${rs}`,20,HEIGHT-100);
-    ctx.fillText(`Total ${ts}`,20,HEIGHT-75);
 }
 
 function drawHistory(){
@@ -328,12 +291,15 @@ function drawAll(){
     drawButton(2*gap+btnW,bottomY,btnW,bottomHeight,"Back","#3498db","back");
 }
 
+// РЕЖИМ АНАЛИЗА - только визуальные средние точки
 function drawAnalysis(){
     drawTarget();
     
+    // Рисуем средние точки для каждой стрелы (по одному кружку на номер)
     for(let num in accuracyStats) {
         let avgPos = getAveragePosition(num);
         if(avgPos && accuracyStats[num].total > 0) {
+            // Рисуем среднюю точку большего размера с обводкой
             ctx.fillStyle = getColorForNumber(num);
             ctx.beginPath();
             ctx.arc(avgPos.x, avgPos.y, Math.max(12, WIDTH/30), 0, Math.PI*2);
@@ -343,11 +309,13 @@ function drawAnalysis(){
             ctx.beginPath();
             ctx.arc(avgPos.x, avgPos.y, Math.max(12, WIDTH/30), 0, Math.PI*2);
             ctx.stroke();
+            // Рисуем номер стрелы
             ctx.fillStyle = "white";
             ctx.font = `bold ${18*1.3}px Arial`;
             ctx.textAlign = "center";
             ctx.fillText(num, avgPos.x, avgPos.y + 5);
             
+            // Рисуем линию от центра мишени к средней точке
             ctx.beginPath();
             ctx.moveTo(center.x, center.y);
             ctx.lineTo(avgPos.x, avgPos.y);
@@ -358,6 +326,15 @@ function drawAnalysis(){
             ctx.setLineDash([]);
         }
     }
+    
+    ctx.fillStyle="#2c3e50";
+    ctx.font=`${22*1.3}px Arial`;
+    ctx.fillText("📈 AVERAGE POSITION ANALYSIS",20,45);
+    ctx.font=`${14*1.3}px Arial`;
+    ctx.fillStyle="rgba(0,0,0,0.6)";
+    ctx.fillText("Each large circle = average landing point for that number",20,80);
+    ctx.fillStyle="rgba(0,0,0,0.6)";
+    ctx.fillText("Dashed line shows deviation from center",20,105);
     
     let bottomHeight = 96*1.2;
     let bottomY = HEIGHT-bottomHeight-10;
@@ -488,7 +465,7 @@ function loop(){
     center={x:WIDTH/2, y:HEIGHT/3};
     TARGET_RADIUS=Math.min(WIDTH,HEIGHT)/5*1.5;
     RED_RADIUS=TARGET_RADIUS*0.35;
-    KEY_SIZE=Math.min(70,WIDTH/7)*1.2;
+    KEY_SIZE=Math.min(80,WIDTH/8)*1.25;
     KEY_GAP=12;
     KEY_START_Y=HEIGHT*0.55;
     
